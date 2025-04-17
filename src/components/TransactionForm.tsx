@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Transaction, RecurringTransaction, RecurrenceType } from '../data';
+import { Transaction, RecurringTransaction, RecurrenceType, loadCategories, loadBudgets } from '../data';
 import { v4 as uuidv4 } from 'uuid';
 
 interface TransactionFormProps {
@@ -27,6 +27,28 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   editingRecurring,
   setEditingRecurring,
 }) => {
+  const [categories, setCategories] = React.useState(() => loadCategories());
+  const [budgets, setBudgets] = React.useState(() => loadBudgets());
+  const [category, setCategory] = React.useState<string>('');
+  const [budgetId, setBudgetId] = React.useState<string>('');
+
+  React.useEffect(() => {
+    setCategories(loadCategories());
+    setBudgets(loadBudgets());
+  }, []);
+
+  React.useEffect(() => {
+    if (editingTx) {
+      setCategory(editingTx.category || '');
+      setBudgetId(editingTx.budgetId || '');
+    } else if (editingRecurring) {
+      setCategory(editingRecurring.category || '');
+      setBudgetId(editingRecurring.budgetId || '');
+    } else {
+      setCategory('');
+      setBudgetId('');
+    }
+  }, [editingTx, editingRecurring]);
   const [desc, setDesc] = useState('');
   const [amount, setAmount] = useState('');
   // Recurring fields
@@ -68,6 +90,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         dayOfWeek: type === 'biweekly' ? dayOfWeek : undefined,
         startDate,
         endDate: endDate || undefined,
+        category: category || undefined,
+        budgetId: budgetId || undefined,
       };
       if (editingRecurring && onEditRecurring) onEditRecurring(rt);
       else if (onAddRecurring) onAddRecurring(rt);
@@ -76,6 +100,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       setEndDate('');
       setDayOfMonth(1);
       setDayOfWeek(0);
+      setCategory('');
+      setBudgetId('');
       if (setEditingRecurring) setEditingRecurring(null);
     } else {
       if (!selectedDay) return;
@@ -84,52 +110,82 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         date: selectedDay,
         description: desc,
         amount: Number(amount),
+        category: category || undefined,
+        budgetId: budgetId || undefined,
       };
       if (editingTx && onEdit) onEdit(tx);
       else if (onAdd) onAdd(tx);
       setDesc(''); setAmount('');
+      setCategory('');
+      setBudgetId('');
       if (setEditingTx) setEditingTx(null);
     }
   };
 
   return (
-    <form className="flex flex-wrap gap-2 mb-4 items-end" onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2 bg-white dark:bg-gray-900 rounded shadow p-4 border border-gray-200 dark:border-gray-700">
       <input
-        className="border rounded px-2 py-1 flex-1"
+        className="border rounded px-2 py-1 flex-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
         placeholder="Description"
         value={desc}
         onChange={e => setDesc(e.target.value)}
         required
       />
       <input
-        className="border rounded px-2 py-1 w-28"
+        className="border rounded px-2 py-1 flex-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
         placeholder="Amount"
-        type="number"
-        step="0.01"
         value={amount}
         onChange={e => setAmount(e.target.value)}
-        required
+        type="number"
+        step="0.01"
       />
+      <div className="mb-2">
+        <label className="block text-sm font-medium mb-1">Category</label>
+        <select
+          className="border rounded px-2 py-1 w-full bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-100"
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+        >
+          <option value="">Uncategorized</option>
+          {categories.map(cat => (
+            <option key={cat.id} value={cat.name}>{cat.name}</option>
+          ))}
+        </select>
+      </div>
+      <div className="mb-2">
+        <label className="block text-sm font-medium mb-1">Budget (Weekly)</label>
+        <select
+          className="border rounded px-2 py-1 w-full bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-100"
+          value={budgetId}
+          onChange={e => setBudgetId(e.target.value)}
+        >
+          <option value="">None</option>
+          {budgets.map(bud => (
+            <option key={bud.id} value={bud.id}>
+              {categories.find(cat => cat.id === bud.categoryId)?.name || 'Uncategorized'} (${`$${bud.amount.toFixed(2)}`}/week)
+            </option>
+          ))}
+        </select>
+      </div>
       {isRecurring ? (
         <>
-          <select className="border rounded px-2 py-1" value={type} onChange={e => setType(e.target.value as RecurrenceType)}>
+          <select className="border rounded px-2 py-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400" value={type} onChange={e => setType(e.target.value as RecurrenceType)}>
             <option value="monthly">Monthly</option>
             <option value="biweekly">Biweekly</option>
           </select>
           {type === 'monthly' && (
             <input
-              className="border rounded px-2 py-1 w-20"
+              className="border rounded px-2 py-1 w-16 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
               type="number"
               min={1}
               max={31}
               value={dayOfMonth}
               onChange={e => setDayOfMonth(Number(e.target.value))}
               placeholder="Day"
-              required
             />
           )}
           {type === 'biweekly' && (
-            <select className="border rounded px-2 py-1" value={dayOfWeek} onChange={e => setDayOfWeek(Number(e.target.value))}>
+            <select className="border rounded px-2 py-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400" value={dayOfWeek} onChange={e => setDayOfWeek(Number(e.target.value))}>
               <option value={0}>Sunday</option>
               <option value={1}>Monday</option>
               <option value={2}>Tuesday</option>
@@ -140,14 +196,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             </select>
           )}
           <input
-            className="border rounded px-2 py-1"
+            className="border rounded px-2 py-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
             type="date"
             value={startDate}
             onChange={e => setStartDate(e.target.value)}
             required
           />
           <input
-            className="border rounded px-2 py-1"
+            className="border rounded px-2 py-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
             type="date"
             value={endDate}
             onChange={e => setEndDate(e.target.value)}
@@ -155,7 +211,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           />
         </>
       ) : null}
-      <button type="submit" className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600">
+      <button type="submit" className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-800 dark:text-white">
         {editingTx || editingRecurring ? 'Save' : 'Add'}
       </button>
       {(editingTx && setEditingTx) && (

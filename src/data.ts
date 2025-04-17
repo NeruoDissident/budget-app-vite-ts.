@@ -6,6 +6,9 @@ export interface Transaction {
   date: string; // YYYY-MM-DD
   description: string;
   amount: number;
+  category?: string;
+  recurring?: boolean; // true for expanded recurring txs
+  budgetId?: string;
 }
 
 export type RecurrenceType = 'monthly' | 'biweekly';
@@ -19,6 +22,19 @@ export interface RecurringTransaction {
   dayOfWeek?: number; // for biweekly (0 = Sunday)
   startDate: string; // YYYY-MM-DD
   endDate?: string; // YYYY-MM-DD
+  category?: string;
+  budgetId?: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+}
+
+export interface Budget {
+  id: string;
+  categoryId: string;
+  amount: number; // weekly budget amount
 }
 
 // LocalStorage helpers
@@ -32,6 +48,27 @@ export function loadData<T>(key: string): T[] {
 }
 export function saveData<T>(key: string, data: T[]): void {
   localStorage.setItem(key, JSON.stringify(data));
+}
+
+export function loadCategories(): Category[] {
+  return loadData<Category>('categories');
+}
+
+export function saveCategories(categories: Category[]): void {
+  saveData('categories', categories);
+}
+
+export function loadBudgets(): Budget[] {
+  return loadData<Budget>('budgets');
+}
+
+export function saveBudgets(budgets: Budget[]): void {
+  saveData('budgets', budgets);
+}
+
+export function getBudgetForWeek(budgets: Budget[], weekStart: string): Budget[] {
+  // Placeholder: implement logic if you want to support future week-specific budgets
+  return budgets;
 }
 
 // Expand recurring transactions into dated instances
@@ -49,6 +86,7 @@ export function addRecurringInstances(transactions: Transaction[], recurrings: R
             date: d.toISOString().slice(0,10),
             description: rt.description,
             amount: rt.amount,
+            recurring: true,
           });
         }
         d = addDays(new Date(d.getFullYear(), d.getMonth() + 1, rt.dayOfMonth), 0);
@@ -64,6 +102,7 @@ export function addRecurringInstances(transactions: Transaction[], recurrings: R
             date: d.toISOString().slice(0,10),
             description: rt.description,
             amount: rt.amount,
+            recurring: true,
           });
         }
         d = addDays(d, 14);
