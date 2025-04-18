@@ -1,0 +1,158 @@
+{
+  "transactions": [
+    {
+      "id": "86b2261c-2e4f-4bf3-abc0-d77b85a4b6bc",
+      "date": "2025-04-17",
+      "description": "Start at",
+      "amount": 133.33
+    }
+  ],
+  "recurrings": [
+    {
+      "id": "3da8440c-4e4e-4bd4-977f-330566c5dfe0",
+      "description": "Car Payment",
+      "amount": -433.48,
+      "type": "monthly",
+      "dayOfMonth": 21,
+      "startDate": "2025-05-21"
+    },
+    {
+      "id": "4d1519d3-934a-4e0b-995a-2849402272b0",
+      "description": "Auto Insurance",
+      "amount": -329.5,
+      "type": "monthly",
+      "dayOfMonth": 5,
+      "startDate": "2025-05-05"
+    },
+    {
+      "id": "3ee919fc-b8f7-4cd3-95e3-7baa88e74cd7",
+      "description": "Phone",
+      "amount": -261.58,
+      "type": "monthly",
+      "dayOfMonth": 21,
+      "startDate": "2025-04-21"
+    },
+    {
+      "id": "bf46497a-84ac-4360-996d-e067435a2d13",
+      "description": "Netflix",
+      "amount": -24.99,
+      "type": "monthly",
+      "dayOfMonth": 4,
+      "startDate": "2025-05-04"
+    },
+    {
+      "id": "694d789b-9a24-4e4f-b9f1-c1d896241056",
+      "description": "YouTube",
+      "amount": -29.99,
+      "type": "monthly",
+      "dayOfMonth": 1,
+      "startDate": "2025-05-01"
+    },
+    {
+      "id": "762cd56e-7453-44f6-818a-5bd5d35df604",
+      "description": "X",
+      "amount": -11,
+      "type": "monthly",
+      "dayOfMonth": 4,
+      "startDate": "2025-05-04"
+    },
+    {
+      "id": "6ea7e87b-2b13-4740-a090-6ca5072b70df",
+      "description": "Microsoft",
+      "amount": -9.99,
+      "type": "monthly",
+      "dayOfMonth": 12,
+      "startDate": "2025-05-12"
+    },
+    {
+      "id": "60b8a072-0a6d-4f85-853a-9846b882c1b9",
+      "description": "XAI",
+      "amount": -30,
+      "type": "monthly",
+      "dayOfMonth": 9,
+      "startDate": "2025-05-09"
+    },
+    {
+      "id": "d6d7a6c9-9597-4319-a70a-a416cba5b3c7",
+      "description": "KlingAI",
+      "amount": -8.88,
+      "type": "monthly",
+      "dayOfMonth": 4,
+      "startDate": "2025-05-04"
+    },
+    {
+      "id": "bc2b4903-5bc8-4c5a-abae-cfd37cabe1ea",
+      "description": "Canva",
+      "amount": -15,
+      "type": "monthly",
+      "dayOfMonth": 27,
+      "startDate": "2025-04-27"
+    },
+    {
+      "id": "6190d024-1eae-4d7d-9ac9-365f681ddc91",
+      "description": "ChatGPT",
+      "amount": -20,
+      "type": "monthly",
+      "dayOfMonth": 11,
+      "startDate": "2025-05-11"
+    },
+    {
+      "id": "cf3b7be0-44a1-4149-91b7-7e1457c77163",
+      "description": "Amazon Prime",
+      "amount": -14.99,
+      "type": "monthly",
+      "dayOfMonth": 17,
+      "startDate": "2025-04-17"
+    },
+    {
+      "id": "380b92a8-97a2-4e79-84da-4e8738f1ba96",
+      "description": "CrunchyRoll",
+      "amount": -5.99,
+      "type": "monthly",
+      "dayOfMonth": 14,
+      "startDate": "2025-05-14"
+    },
+    {
+      "id": "2a0f0a3e-f12c-41bd-a24d-4a83ebcaca99",
+      "description": "Hunyuan",
+      "amount": -9.99,
+      "type": "monthly",
+      "dayOfMonth": 9,
+      "startDate": "2025-05-09"
+    },
+    {
+      "id": "31bda020-01a2-4176-ba9d-3625252e966d",
+      "description": "Rocket Money",
+      "amount": -10,
+      "type": "monthly",
+      "dayOfMonth": 4,
+      "startDate": "2025-05-04"
+    },
+    {
+      "id": "06a48a8e-127c-4335-b9f0-ac6677edc8ab",
+      "description": "Uber",
+      "amount": -9.99,
+      "type": "monthly",
+      "dayOfMonth": 27,
+      "startDate": "2025-04-27"
+    },
+    {
+      "id": "9ba03759-cd56-4755-80d0-782e521bf1e0",
+      "description": "Payroll",
+      "amount": 1500,
+      "type": "biweekly",
+      "dayOfWeek": 2,
+      "startDate": "2025-04-22"
+    },
+    {
+      "id": "502b5250-cb98-4ae3-8075-31df1a55db8e",
+      "description": "Storage",
+      "amount": -130,
+      "type": "monthly",
+      "dayOfMonth": 1,
+      "startDate": "2025-05-18"
+    }
+  ],
+  "categories": [],
+  "budgets": []
+}

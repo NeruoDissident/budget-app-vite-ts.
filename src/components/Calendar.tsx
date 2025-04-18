@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { eachDayOfInterval, startOfMonth, endOfMonth, getDay, format, isToday } from 'date-fns';
 import { Transaction } from '../data';
+import styles from './Calendar.module.css';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -85,6 +86,20 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDay, onSelectDay, transacti
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
+        <button
+          className="rounded-full p-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-800 dark:hover:bg-blue-700 shadow transition-colors focus:outline-none"
+          aria-label="Previous Month"
+          onClick={() => {
+            if (currentMonth === 0) {
+              setCurrentMonth(11);
+              setCurrentYear(y => y - 1);
+            } else {
+              setCurrentMonth(m => m - 1);
+            }
+          }}
+        >
+          <span className="text-2xl text-blue-600 dark:text-blue-300">&#8592;</span>
+        </button>
         <select
           className="border rounded px-2 py-1 bg-white dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
           value={currentMonth}
@@ -103,6 +118,20 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDay, onSelectDay, transacti
             <option key={y} value={y}>{y}</option>
           ))}
         </select>
+        <button
+          className="rounded-full p-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-800 dark:hover:bg-blue-700 shadow transition-colors focus:outline-none"
+          aria-label="Next Month"
+          onClick={() => {
+            if (currentMonth === 11) {
+              setCurrentMonth(0);
+              setCurrentYear(y => y + 1);
+            } else {
+              setCurrentMonth(m => m + 1);
+            }
+          }}
+        >
+          <span className="text-2xl text-blue-600 dark:text-blue-300">&#8594;</span>
+        </button>
       </div>
       <div className="grid grid-cols-7 gap-4 bg-white dark:bg-gray-800 rounded shadow p-6">
         {/* Weekday headers */}
@@ -115,45 +144,66 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDay, onSelectDay, transacti
         ))}
         {/* Days of month */}
         {days.map(day => {
-           const dateStr = day.toISOString().slice(0, 10);
-           const bal = txByDate[dateStr] || 0;
-           const begin = balancesByDay[dateStr]?.begin ?? 0;
-           const end = balancesByDay[dateStr]?.end ?? 0;
-           const dayTxs = getAllTxsForDay(dateStr);
-           const recurringTxs = dayTxs.filter(tx => tx.recurring);
-           return (
-             <div key={dateStr} className="relative group">
-                <button
-                  className={`h-32 w-full flex flex-col items-start justify-start rounded border transition-colors p-2 overflow-hidden text-left
-                    ${selectedDay === dateStr ? 'border-blue-500 bg-blue-50 dark:bg-blue-900' : 'border-gray-200 dark:border-gray-700'}
-                    ${isToday(day) ? 'ring-2 ring-blue-400' : ''} bg-white dark:bg-gray-900`}
-                  onClick={() => { onSelectDay(dateStr); }}
-                >
-                 {/* Recurring icon if present */}
-                 {recurringTxs.length > 0 && (
-                   <span className="absolute top-2 left-2 text-lg" title={recurringTxs.map(tx => tx.description).join(', ')}>
-                     🔁
-                   </span>
-                 )}
-                 <span className="text-base font-semibold text-gray-700 dark:text-gray-100 ml-6">{format(day, 'd')}</span>
-                 <span className="text-xs text-gray-400 mt-1">Begin: <span className={begin >= 0 ? 'text-green-600' : 'text-red-600'}>${begin.toFixed(2)}</span></span>
-                 <span className="text-xs text-gray-400">End: <span className={end >= 0 ? 'text-green-600' : 'text-red-600'}>${end.toFixed(2)}</span></span>
-                 {/* Show up to 2 transactions as a preview */}
-                 <ul className="mt-2 space-y-1 w-full">
-                   {dayTxs.slice(0, 2).map(tx => (
-                     <li key={tx.id} className="truncate text-xs flex items-center">
-                       <span className={tx.amount >= 0 ? 'text-green-600' : 'text-red-600'}>{tx.amount >= 0 ? '+' : ''}${tx.amount.toFixed(2)}</span>
-                       <span className="ml-1 truncate">{tx.description}</span>
-                       {tx.recurring && <span className="ml-1" title="Recurring">🔁</span>}
-                     </li>
-                   ))}
-                   {dayTxs.length > 2 && <li className="text-xs text-gray-500">+${dayTxs.length - 2} more...</li>}
-                 </ul>
-               </button>
+  const dateStr = day.toISOString().slice(0, 10);
+  const begin = balancesByDay[dateStr]?.begin ?? 0;
+  const end = balancesByDay[dateStr]?.end ?? 0;
+  const dayTxs = getAllTxsForDay(dateStr);
+  const recurringTxs = dayTxs.filter(tx => tx.recurring);
+  const earnings = dayTxs.filter(tx => tx.amount > 0).reduce((sum, tx) => sum + tx.amount, 0);
+  const spending = dayTxs.filter(tx => tx.amount < 0).reduce((sum, tx) => sum + tx.amount, 0);
+  return (
+    <div key={dateStr} className="relative group">
+      <button
+        className={[
+          styles.calendarDay,
+          selectedDay === dateStr ? styles.selected : '',
+          isToday(day) ? styles.today : '',
+        ].join(' ')}
+        onClick={() => { onSelectDay(dateStr); }}
+      >
+        {recurringTxs.length > 0 && (
+          <span className={styles.recurringIcon} title={recurringTxs.map(tx => tx.description).join(', ')}>
+            🔁
+          </span>
+        )}
+        <span className={styles.dayNumber}>{format(day, 'd')}</span>
+        <span className={styles.balance} style={{ color: end >= 0 ? '#22c55e' : '#ef4444' }}>
+          ${end.toFixed(2)}
+        </span>
+        <div className={styles.transactions}>
+          {earnings > 0 && (
+            <span className={styles.earnings}>
+              <span role="img" aria-label="Earnings">💰</span> +${earnings.toFixed(2)}
+            </span>
+          )}
+          {/* Show each spending category icon for the day's spending transactions */}
+          {dayTxs.filter(tx => tx.amount < 0).map((tx, idx) => {
+            const categoryIcons: Record<string, string> = {
+              Groceries: "🛒",
+              Food: "🍔",
+              Restaurants: "🍔",
+              Transport: "🚗",
+              Rent: "🏠",
+              Utilities: "💡",
+              Entertainment: "🎬",
+              Shopping: "🛍️",
+              Health: "💊",
+              Other: "💸",
+              Uncategorized: "💸"
+            };
+            const icon = categoryIcons[tx.category || 'Uncategorized'] || "💸";
+            return (
+              <span key={tx.id} className={styles.spending}>
+                <span role="img" aria-label={tx.category || 'Spending'}>{icon}</span> -${Math.abs(tx.amount).toFixed(2)}
+              </span>
+            );
+          })}
+        </div>
 
-             </div>
-           );
-         })}
+      </button>
+    </div>
+  );
+        })}
       </div>
     </div>
   );

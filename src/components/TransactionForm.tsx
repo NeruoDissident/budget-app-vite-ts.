@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Transaction, RecurringTransaction, RecurrenceType, loadCategories, loadBudgets } from '../data';
+import { Transaction, RecurringTransaction, RecurrenceType, loadCategories, loadBudgets, saveCategories } from '../data';
 import { v4 as uuidv4 } from 'uuid';
 
 interface TransactionFormProps {
@@ -31,6 +31,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const [budgets, setBudgets] = React.useState(() => loadBudgets());
   const [category, setCategory] = React.useState<string>('');
   const [budgetId, setBudgetId] = React.useState<string>('');
+  const [showAddCategory, setShowAddCategory] = React.useState(false);
+  const [newCategoryName, setNewCategoryName] = React.useState('');
 
   React.useEffect(() => {
     setCategories(loadCategories());
@@ -147,10 +149,65 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           onChange={e => setCategory(e.target.value)}
         >
           <option value="">Uncategorized</option>
-          {categories.map(cat => (
+          {categories.sort((a, b) => a.name.localeCompare(b.name)).map(cat => (
             <option key={cat.id} value={cat.name}>{cat.name}</option>
           ))}
         </select>
+        {showAddCategory ? (
+          <div className="mt-2 w-full">
+            <input
+              className="border rounded px-3 py-2 w-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-base mb-2"
+              placeholder="New category name"
+              value={newCategoryName}
+              onChange={e => setNewCategoryName(e.target.value)}
+              autoFocus
+            />
+            <div className="flex gap-2 w-full">
+              <button
+                type="button"
+                className="flex-1 px-2 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 text-base"
+                onClick={() => {
+                  const trimmed = newCategoryName.trim();
+                  if (!trimmed) return;
+                  // Prevent duplicates (case-insensitive)
+                  if (categories.some(cat => cat.name.toLowerCase() === trimmed.toLowerCase())) {
+                    setNewCategoryName('');
+                    setShowAddCategory(false);
+                    setCategory(trimmed);
+                    return;
+                  }
+                  const newCat = { id: uuidv4(), name: trimmed };
+                  const updated = [...categories, newCat];
+                  setCategories(updated);
+                  saveCategories(updated);
+                  setCategory(trimmed);
+                  setNewCategoryName('');
+                  setShowAddCategory(false);
+                }}
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                className="flex-1 px-2 py-2 rounded bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-600 text-base"
+                onClick={() => {
+                  setShowAddCategory(false);
+                  setNewCategoryName('');
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="mt-2 text-xs text-blue-500 hover:underline"
+            onClick={() => setShowAddCategory(true)}
+          >
+            + Add Category
+          </button>
+        )}
       </div>
       <div className="mb-2">
         <label className="block text-sm font-medium mb-1">Budget (Weekly)</label>

@@ -1,0 +1,71 @@
+.calendarDay {
+  @apply h-32 w-full flex flex-col items-center justify-between rounded-lg border transition-colors p-2 overflow-hidden text-center shadow-sm;
+  background: #fff !important;
+  color: #222;
+}
+.dark .calendarDay {
+  background: #18181b !important;
+  color: #f3f4f6 !important;
+  border-color: #27272a !important;
+}
+.dark .calendarDay {
+  background: #18181b !important;
+  color: #f3f4f6 !important;
+  border-color: #27272a !important;
+}
+.dark .calendarDay .dayNumber {
+  color: #f3f4f6 !important;
+}
+.retro .calendarDay {
+  background: #222 !important;
+  color: #33ff33 !important;
+  border: 2px solid #33ff33 !important;
+}
+.synthwave .calendarDay {
+  background: rgba(26,0,43,0.9) !important;
+  color: #fffb96 !important;
+  border: 2px solid #ff00cc !important;
+}
+
+.calendarDay.selected {
+  @apply border-blue-500 bg-blue-50 dark:bg-blue-900;
+}
+.calendarDay.today {
+  @apply ring-2 ring-blue-400;
+}
+.calendarDay .dayNumber {
+  @apply text-base font-bold;
+  color: inherit;
+}
+.retro .calendarDay .dayNumber {
+  color: #33ff33 !important;
+}
+.synthwave .calendarDay .dayNumber {
+  color: #fffb96 !important;
+}
+
+.calendarDay .balance {
+  @apply text-lg font-extrabold mt-1 mb-1;
+}
+.calendarDay .earnings {
+  @apply text-green-500 font-semibold flex items-center gap-1;
+}
+.calendarDay .spending {
+  @apply text-red-500 font-semibold flex items-center gap-1;
+}
+.calendarDay .transactions {
+  @apply flex flex-col gap-1 mt-1;
+}
+.calendarDay .recurringIcon {
+  @apply absolute top-2 left-2 text-lg;
+}
+
+:global(.dark) :global([class*="calendarDay"]) {
+  background: #18181b !important;
+  color: #f3f4f6 !important;
+  border-color: #27272a !important;
+}
+
+.calendarDay:hover {
+  @apply shadow-lg bg-blue-100 dark:bg-blue-800;
+}

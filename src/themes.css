@@ -1,0 +1,60 @@
+/* Retro 8-bit Theme */
+.retro body, .retro {
+  font-family: 'Press Start 2P', monospace !important;
+  background: #222 !important;
+  color: #33ff33 !important;
+}
+.retro .bg-white, .retro .bg-gray-100, .retro .bg-gray-900, .retro .dark\:bg-gray-900, .retro .dark\:bg-gray-800 {
+  background: #222 !important;
+  border: 2px solid #33ff33 !important;
+  color: #33ff33 !important;
+}
+.retro .text-blue-600, .retro .text-blue-400, .retro .text-gray-700, .retro .text-gray-100, .retro .text-gray-900, .retro .text-gray-200, .retro .text-gray-400 {
+  color: #33ff33 !important;
+}
+.retro button, .retro select, .retro input {
+  font-family: 'Press Start 2P', monospace !important;
+  background: #111 !important;
+  color: #33ff33 !important;
+  border: 2px solid #33ff33 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+.retro .rounded, .retro .rounded-t, .retro .rounded-full {
+  border-radius: 0 !important;
+}
+.retro .shadow, .retro .shadow-lg {
+  box-shadow: none !important;
+}
+
+/* Neon Synthwave Theme */
+.synthwave body, .synthwave {
+  font-family: 'Orbitron', 'Arial Black', Arial, sans-serif !important;
+  background: linear-gradient(135deg, #1a002b 0%, #ff00cc 100%) !important;
+  color: #fffb96 !important;
+}
+.synthwave .bg-white, .synthwave .bg-gray-100, .synthwave .bg-gray-900, .synthwave .dark\:bg-gray-900, .synthwave .dark\:bg-gray-800 {
+  background: rgba(26,0,43,0.9) !important;
+  border: 2px solid #ff00cc !important;
+  color: #fffb96 !important;
+}
+.synthwave .text-blue-600, .synthwave .text-blue-400, .synthwave .text-gray-700, .synthwave .text-gray-100, .synthwave .text-gray-900, .synthwave .text-gray-200, .synthwave .text-gray-400 {
+  color: #00fff7 !important;
+}
+.synthwave button, .synthwave select, .synthwave input {
+  font-family: 'Orbitron', 'Arial Black', Arial, sans-serif !important;
+  background: #2d004d !important;
+  color: #fffb96 !important;
+  border: 2px solid #ff00cc !important;
+  box-shadow: 0 0 8px #ff00cc, 0 0 16px #00fff7 !important;
+  border-radius: 0.5rem !important;
+}
+.synthwave .rounded, .synthwave .rounded-t, .synthwave .rounded-full {
+  border-radius: 0.5rem !important;
+}
+.synthwave .shadow, .synthwave .shadow-lg {
+  box-shadow: 0 0 16px #ff00cc, 0 0 32px #00fff7 !important;
+}
+
+/* Import Google Fonts for themes */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Press+Start+2P&display=swap');

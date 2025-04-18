@@ -1,0 +1,15 @@
+.chartContainer {
+  max-width: 100%;
+  width: 100%;
+  height: 350px;
+  overflow: hidden;
+  /* Prevent unwanted scrolling */
+}
+
+.pieChartCanvas {
+  display: block;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  margin: 0 auto;
+  /* Prevent Chart.js from causing scroll */
+}

@@ -23,31 +23,38 @@ function downloadJSON(obj: any, filename: string) {
   }, 100);
 }
 
+import SpendingByCategoryChart from './components/SpendingByCategoryChart';
+
 const App: React.FC = () => {
-  // Tab state for switching between calendar and recurring
-  const [tab, setTab] = useState<'calendar' | 'recurring' | 'budgets'>('calendar');
+  // Tab state for switching between calendar, recurring, budgets, and graphs
+  const [tab, setTab] = useState<'calendar' | 'recurring' | 'budgets' | 'graphs'>('calendar');
   // Recurring editing state
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
-  // Dark mode state
-  const [darkMode, setDarkMode] = useState(() => {
+  // Theme state: 'default', 'retro', 'synthwave'
+  const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('theme');
-      if (stored) return stored === 'dark';
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      return localStorage.getItem('theme') || 'default';
     }
-    return false;
+    return 'default';
   });
 
   React.useEffect(() => {
     const html = document.documentElement;
-    if (darkMode) {
+    html.classList.remove('dark', 'retro', 'synthwave');
+    if (theme === 'retro') {
+      html.classList.add('retro');
+      localStorage.setItem('theme', 'retro');
+    } else if (theme === 'synthwave') {
+      html.classList.add('synthwave');
+      localStorage.setItem('theme', 'synthwave');
+    } else if (theme === 'dark') {
       html.classList.add('dark');
       localStorage.setItem('theme', 'dark');
     } else {
-      html.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+      localStorage.setItem('theme', 'default');
     }
-  }, [darkMode]);
+  }, [theme]);
+
   const [transactions, setTransactions] = useState<Transaction[]>(() => loadData('transactions'));
   const [recurrings, setRecurrings] = useState<RecurringTransaction[]>(() => loadData('recurrings'));
   const [selectedDay, setSelectedDay] = useState<SelectedDay>(startOfToday().toISOString().slice(0, 10));
@@ -116,15 +123,20 @@ const App: React.FC = () => {
   const handleDeleteRecurring = (id: string) => setRecurrings(rs => rs.filter(r => r.id !== id));
 
   return (
-    <div className="flex min-h-screen relative">
-      {/* Dark mode toggle button */}
-      <button
-        className="absolute top-4 right-4 z-50 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3 py-1 rounded shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-        onClick={() => setDarkMode(dm => !dm)}
-        aria-label="Toggle dark mode"
-      >
-        {darkMode ? '🌙 Dark' : '☀️ Light'}
-      </button>
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      {/* Theme Selector */}
+      <div className="fixed top-4 right-4 z-50">
+        <select
+          className="border rounded px-3 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 shadow"
+          value={theme}
+          onChange={e => setTheme(e.target.value)}
+        >
+          <option value="default">Default</option>
+          <option value="dark">Dark</option>
+          <option value="retro">Retro 8-bit</option>
+          <option value="synthwave">Neon Synthwave</option>
+        </select>
+      </div>
       {/* Tabs */}
       <div className="absolute left-0 right-0 top-0 flex flex-col items-center mt-4 z-40">
 
@@ -146,6 +158,12 @@ const App: React.FC = () => {
             onClick={() => setTab('budgets')}
           >
             Budgets
+          </button>
+          <button
+            className={`px-4 py-2 rounded-t ${tab === 'graphs' ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200'}`}
+            onClick={() => setTab('graphs')}
+          >
+            Graphs
           </button>
         </div>
       </div>
@@ -191,7 +209,18 @@ const App: React.FC = () => {
       )}
       {tab === 'budgets' && (
         <main className="flex-1 p-8 pt-20 flex justify-center items-start">
-          <BudgetsTab selectedDay={selectedDay!} setSelectedDay={setSelectedDay} transactions={allTransactions} onExport={handleExport} onImport={handleImport} />
+          <BudgetsTab
+            selectedDay={selectedDay!}
+            setSelectedDay={setSelectedDay}
+            transactions={allTransactions}
+            onExport={handleExport}
+            onImport={handleImport}
+          />
+        </main>
+      )}
+      {tab === 'graphs' && (
+        <main className="flex-1 p-8 pt-24 flex justify-center items-start">
+          <SpendingByCategoryChart transactions={allTransactions} />
         </main>
       )}
     </div>
