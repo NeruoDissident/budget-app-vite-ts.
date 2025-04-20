@@ -17,8 +17,10 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({ selectedDay, setSelectedDay, tr
   const [budgets, setBudgets] = useState<Budget[]>(() => loadBudgets());
   const [newCat, setNewCat] = useState('');
   const [newCatBudget, setNewCatBudget] = useState('');
+  const [budgetRecurrence, setBudgetRecurrence] = useState<'this' | 'future'>('this');
   const [editingCat, setEditingCat] = useState<Category | null>(null);
   const [editingBudget, setEditingBudget] = useState<{ id: string; amount: string } | null>(null);
+  const [showAfterBudget, setShowAfterBudget] = useState(false);
 
   // Add category (with optional budget)
   const handleAddCategory = () => {
@@ -29,14 +31,24 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({ selectedDay, setSelectedDay, tr
     saveCategories(updatedCats);
     // If budget entered, add it
     if (newCatBudget && !isNaN(Number(newCatBudget))) {
-      const newBudget: Budget = { id: uuidv4(), categoryId: cat.id, amount: Number(newCatBudget) };
+      const now = new Date(selectedDay);
+      const monthStr = now.toISOString().slice(0, 7); // YYYY-MM
+      const newBudget: Budget = {
+        id: uuidv4(),
+        categoryId: cat.id,
+        amount: Number(newCatBudget),
+        month: budgetRecurrence === 'this' ? monthStr : undefined,
+        recurring: budgetRecurrence === 'future',
+      };
       const updatedBudgets = [...budgets, newBudget];
       setBudgets(updatedBudgets);
       saveBudgets(updatedBudgets);
     }
     setNewCat('');
     setNewCatBudget('');
+    setBudgetRecurrence('this');
   };
+
 
   // Edit category name
   const handleEditCategory = (id: string, name: string) => {
@@ -73,29 +85,45 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({ selectedDay, setSelectedDay, tr
   };
 
   // Determine week range based on selectedDay
-  const weekStart = startOfWeek(parseISO(selectedDay), { weekStartsOn: 0 });
-  const weekEnd = endOfWeek(parseISO(selectedDay), { weekStartsOn: 0 });
-  const weekLabel = `${format(weekStart, 'MMM d, yyyy')} - ${format(weekEnd, 'MMM d, yyyy')}`;
+  // Month navigation
+  const now = new Date(selectedDay);
+  const monthStr = now.toISOString().slice(0, 7); // YYYY-MM
+  const monthLabel = format(now, 'MMMM yyyy');
+  const goPrevMonth = () => {
+    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    setSelectedDay(prev.toISOString().slice(0, 10));
+  };
+  const goNextMonth = () => {
+    const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    setSelectedDay(next.toISOString().slice(0, 10));
+  };
 
-  // Calculate spent per budget for this week
+  // Calculate spent per budget for this month
   const spentByBudget: Record<string, number> = {};
   transactions.forEach(tx => {
     if (!tx.budgetId) return;
     const txDate = parseISO(tx.date);
-    if (isWithinInterval(txDate, { start: weekStart, end: weekEnd })) {
+    // Only count transactions in the same month
+    if (txDate.getFullYear() === now.getFullYear() && txDate.getMonth() === now.getMonth()) {
       spentByBudget[tx.budgetId] = (spentByBudget[tx.budgetId] || 0) + Math.abs(tx.amount);
     }
   });
 
-  // Week navigation handlers
-  const goPrevWeek = () => {
-    const prev = addWeeks(weekStart, -1);
-    setSelectedDay(prev.toISOString().slice(0, 10));
-  };
-  const goNextWeek = () => {
-    const next = addWeeks(weekStart, 1);
-    setSelectedDay(next.toISOString().slice(0, 10));
-  };
+  // Filter budgets for this month (recurring or explicit)
+  const budgetsForMonth = budgets.filter(b => (b.month === monthStr) || (b.recurring && (!b.month || b.month <= monthStr)));
+
+  // Calculate balances before/after budget
+  const totalIncome = transactions.filter(tx => {
+    const txDate = parseISO(tx.date);
+    return tx.amount > 0 && txDate.getFullYear() === now.getFullYear() && txDate.getMonth() === now.getMonth();
+  }).reduce((sum, tx) => sum + tx.amount, 0);
+  const totalExpense = transactions.filter(tx => {
+    const txDate = parseISO(tx.date);
+    return tx.amount < 0 && txDate.getFullYear() === now.getFullYear() && txDate.getMonth() === now.getMonth();
+  }).reduce((sum, tx) => sum + tx.amount, 0);
+  const totalBudget = budgetsForMonth.reduce((sum, b) => sum + b.amount, 0);
+  const balanceBeforeBudget = totalIncome + totalExpense;
+  const balanceAfterBudget = balanceBeforeBudget - totalBudget;
 
   return (
     <div className="w-full max-w-xl mx-auto">
@@ -121,9 +149,28 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({ selectedDay, setSelectedDay, tr
         >Reset All Data</button>
       </div>
       <div className="flex items-center gap-4 mb-4">
-        <button className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={goPrevWeek}>&lt;</button>
-        <span className="font-semibold">Week: {weekLabel}</span>
-        <button className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={goNextWeek}>&gt;</button>
+        <button className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={goPrevMonth}>&lt;</button>
+        <span className="font-semibold">Month: {monthLabel}</span>
+        <button className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={goNextMonth}>&gt;</button>
+        <label className="flex items-center gap-2 ml-4">
+          <input
+            type="checkbox"
+            checked={showAfterBudget}
+            onChange={e => setShowAfterBudget(e.target.checked)}
+          />
+          <span className="text-xs">Show balances after budget</span>
+        </label>
+      </div>
+      <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded shadow flex flex-col gap-2">
+        <div>
+          <span className="font-semibold">Balance ({showAfterBudget ? 'After Budget' : 'Before Budget'}): </span>
+          <span className={showAfterBudget && balanceAfterBudget < 0 ? 'text-red-600' : 'text-green-600'}>
+            ${showAfterBudget ? balanceAfterBudget.toFixed(2) : balanceBeforeBudget.toFixed(2)}
+          </span>
+        </div>
+        <div className="text-xs text-gray-500">
+          <span>Total Income: ${totalIncome.toFixed(2)}</span> | <span>Total Expense: ${totalExpense.toFixed(2)}</span> | <span>Total Budget: ${totalBudget.toFixed(2)}</span>
+        </div>
       </div>
       <div className="mb-6">
         <h3 className="font-semibold mb-2">Categories</h3>
@@ -144,6 +191,14 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({ selectedDay, setSelectedDay, tr
             type="number"
             min="0"
           />
+          <select
+            className="border rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100"
+            value={budgetRecurrence}
+            onChange={e => setBudgetRecurrence(e.target.value as 'this' | 'future')}
+          >
+            <option value="this">This month only</option>
+            <option value="future">Every month going forward</option>
+          </select>
           <button className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600" onClick={handleAddCategory}>Add</button>
         </div>
         <ul className="divide-y">
@@ -174,9 +229,9 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({ selectedDay, setSelectedDay, tr
         </ul>
       </div>
       <div>
-        <h3 className="font-semibold mb-2">Budgets</h3>
+        <h3 className="font-semibold mb-2">Budgets (Monthly)</h3>
         <ul className="divide-y">
-          {budgets.map(bud => {
+          {budgetsForMonth.map(bud => {
             const cat = categories.find(c => c.id === bud.categoryId);
             const spent = spentByBudget[bud.id] || 0;
             const remaining = bud.amount - spent;
@@ -185,6 +240,7 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({ selectedDay, setSelectedDay, tr
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-semibold">{cat?.name || 'Uncategorized'}</span>
                   <span className="text-xs text-gray-500">Budget: ${`$${bud.amount.toFixed(2)}`}</span>
+                  {bud.recurring ? <span className="ml-2 text-xs text-blue-500">Recurring</span> : bud.month ? <span className="ml-2 text-xs text-gray-400">{bud.month}</span> : null}
                 </div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs">Spent: <span className="font-semibold">${`$${spent.toFixed(2)}`}</span></span>

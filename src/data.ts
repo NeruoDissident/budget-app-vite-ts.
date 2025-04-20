@@ -34,36 +34,149 @@ export interface Category {
 export interface Budget {
   id: string;
   categoryId: string;
-  amount: number; // weekly budget amount
+  amount: number; // monthly budget amount
+  month?: string; // YYYY-MM, if present applies only to that month
+  recurring?: boolean; // if true, applies every month going forward
 }
 
-// LocalStorage helpers
-export function loadData<T>(key: string): T[] {
+// ---- Multi-user Local Storage ----
+
+export interface User {
+  id: string;
+  name: string;
+}
+
+export interface AppUserData {
+  transactions: Transaction[];
+  recurrings: RecurringTransaction[];
+  categories: Category[];
+  budgets: Budget[];
+}
+
+const USERS_KEY = 'budget-calendar-users';
+const CURRENT_USER_KEY = 'budget-calendar-current-user';
+
+// Get all users
+export function getUsers(): User[] {
   try {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : [];
+    const users = localStorage.getItem(USERS_KEY);
+    return users ? JSON.parse(users) : [];
   } catch {
     return [];
   }
 }
-export function saveData<T>(key: string, data: T[]): void {
-  localStorage.setItem(key, JSON.stringify(data));
+
+// Save user list
+function saveUsers(users: User[]) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
 }
 
+// Get current user ID
+export function getCurrentUserId(): string | null {
+  return localStorage.getItem(CURRENT_USER_KEY);
+}
+
+// Set current user ID
+export function setCurrentUserId(id: string) {
+  localStorage.setItem(CURRENT_USER_KEY, id);
+}
+
+// Create new user
+export function createUser(name: string): User {
+  const id = uuidv4();
+  const user: User = { id, name };
+  const users = getUsers();
+  saveUsers([...users, user]);
+  // Initialize empty data
+  saveUserData(id, {
+    transactions: [],
+    recurrings: [],
+    categories: [],
+    budgets: [],
+  });
+  setCurrentUserId(id);
+  return user;
+}
+
+// Delete user
+export function deleteUser(id: string) {
+  const users = getUsers().filter(u => u.id !== id);
+  saveUsers(users);
+  localStorage.removeItem(getUserDataKey(id));
+  // If current user deleted, switch to first user if exists
+  const current = getCurrentUserId();
+  if (current === id) {
+    if (users.length > 0) setCurrentUserId(users[0].id);
+    else localStorage.removeItem(CURRENT_USER_KEY);
+  }
+}
+
+// Get storage key for user data
+function getUserDataKey(userId: string) {
+  return `budget-calendar-user-${userId}`;
+}
+
+// Get user data
+export function loadUserData(userId: string): AppUserData {
+  try {
+    const data = localStorage.getItem(getUserDataKey(userId));
+    if (data) return JSON.parse(data);
+    return { transactions: [], recurrings: [], categories: [], budgets: [] };
+  } catch {
+    return { transactions: [], recurrings: [], categories: [], budgets: [] };
+  }
+}
+
+// Save user data
+export function saveUserData(userId: string, data: AppUserData) {
+  localStorage.setItem(getUserDataKey(userId), JSON.stringify(data));
+}
+
+// ---- Per-user Data Accessors ----
+
+function getActiveUserData(): AppUserData {
+  const userId = getCurrentUserId();
+  if (!userId) return { transactions: [], recurrings: [], categories: [], budgets: [] };
+  return loadUserData(userId);
+}
+
+function setActiveUserData(data: AppUserData) {
+  const userId = getCurrentUserId();
+  if (!userId) return;
+  saveUserData(userId, data);
+}
+
+export function loadTransactions(): Transaction[] {
+  return getActiveUserData().transactions;
+}
+export function saveTransactions(transactions: Transaction[]): void {
+  const data = getActiveUserData();
+  data.transactions = transactions;
+  setActiveUserData(data);
+}
+export function loadRecurrings(): RecurringTransaction[] {
+  return getActiveUserData().recurrings;
+}
+export function saveRecurrings(recurrings: RecurringTransaction[]): void {
+  const data = getActiveUserData();
+  data.recurrings = recurrings;
+  setActiveUserData(data);
+}
 export function loadCategories(): Category[] {
-  return loadData<Category>('categories');
+  return getActiveUserData().categories;
 }
-
 export function saveCategories(categories: Category[]): void {
-  saveData('categories', categories);
+  const data = getActiveUserData();
+  data.categories = categories;
+  setActiveUserData(data);
 }
-
 export function loadBudgets(): Budget[] {
-  return loadData<Budget>('budgets');
+  return getActiveUserData().budgets;
 }
-
 export function saveBudgets(budgets: Budget[]): void {
-  saveData('budgets', budgets);
+  const data = getActiveUserData();
+  data.budgets = budgets;
+  setActiveUserData(data);
 }
 
 export function getBudgetForWeek(budgets: Budget[], weekStart: string): Budget[] {

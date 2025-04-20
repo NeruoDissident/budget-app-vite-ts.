@@ -4,7 +4,7 @@ import Sidebar from './components/Sidebar';
 import TransactionForm from './components/TransactionForm';
 import RecurringTab from './components/RecurringTab';
 import BudgetsTab from './components/BudgetsTab';
-import { Transaction, RecurringTransaction, loadData, saveData, computeBalances, addRecurringInstances } from './data';
+import { Transaction, RecurringTransaction, computeBalances, addRecurringInstances } from './data';
 import { startOfToday } from 'date-fns';
 
 export type SelectedDay = string | null;
@@ -25,9 +25,29 @@ function downloadJSON(obj: any, filename: string) {
 
 import SpendingByCategoryChart from './components/SpendingByCategoryChart';
 
+import {
+  getUsers,
+  getCurrentUserId,
+  setCurrentUserId,
+  createUser,
+  deleteUser,
+  loadTransactions,
+  saveTransactions,
+  loadRecurrings,
+  saveRecurrings,
+  loadCategories,
+  saveCategories,
+  loadBudgets,
+  saveBudgets,
+  User,
+  Category,
+  Budget
+} from './data';
+import UserManagementTab from './components/UserManagementTab';
+
 const App: React.FC = () => {
-  // Tab state for switching between calendar, recurring, budgets, and graphs
-  const [tab, setTab] = useState<'calendar' | 'recurring' | 'budgets' | 'graphs'>('calendar');
+  // Tab state for switching between calendar, recurring, budgets, graphs, and users
+  const [tab, setTab] = useState<'calendar' | 'recurring' | 'budgets' | 'graphs' | 'users'>('calendar');
   // Recurring editing state
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
   // Theme state: 'default', 'retro', 'synthwave'
@@ -38,37 +58,70 @@ const App: React.FC = () => {
     return 'default';
   });
 
-  React.useEffect(() => {
-    const html = document.documentElement;
-    html.classList.remove('dark', 'retro', 'synthwave');
-    if (theme === 'retro') {
-      html.classList.add('retro');
-      localStorage.setItem('theme', 'retro');
-    } else if (theme === 'synthwave') {
-      html.classList.add('synthwave');
-      localStorage.setItem('theme', 'synthwave');
-    } else if (theme === 'dark') {
-      html.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      localStorage.setItem('theme', 'default');
-    }
-  }, [theme]);
+  // User state
+  const [users, setUsers] = useState<User[]>(getUsers());
+  const [currentUserId, setCurrentUserIdState] = useState<string | null>(getCurrentUserId());
 
-  const [transactions, setTransactions] = useState<Transaction[]>(() => loadData('transactions'));
-  const [recurrings, setRecurrings] = useState<RecurringTransaction[]>(() => loadData('recurrings'));
+  // Reload users from storage
+  const reloadUsers = () => setUsers(getUsers());
+
+  // On user change, reload all app data
+  React.useEffect(() => {
+    setCurrentUserIdState(getCurrentUserId());
+    setTransactions(loadTransactions());
+    setRecurrings(loadRecurrings());
+    setCategories(loadCategories());
+    setBudgets(loadBudgets());
+  }, [currentUserId]);
+
+  // User management handlers
+  const handleCreateUser = (name: string) => {
+    createUser(name);
+    reloadUsers();
+    setCurrentUserIdState(getCurrentUserId());
+    setTab('calendar');
+  };
+  const handleSwitchUser = (id: string) => {
+    setCurrentUserId(id);
+    setCurrentUserIdState(id);
+    setTab('calendar');
+  };
+  const handleDeleteUser = (id: string) => {
+    deleteUser(id);
+    reloadUsers();
+    setCurrentUserIdState(getCurrentUserId());
+    setTab('calendar');
+  };
+
+  // App data state
+  const [transactions, setTransactions] = useState<Transaction[]>(() => loadTransactions());
+  const [recurrings, setRecurrings] = useState<RecurringTransaction[]>(() => loadRecurrings());
+  const [categories, setCategories] = useState<Category[]>(() => loadCategories());
+  const [budgets, setBudgets] = useState<Budget[]>(() => loadBudgets());
   const [selectedDay, setSelectedDay] = useState<SelectedDay>(startOfToday().toISOString().slice(0, 10));
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+
+  // Save to localStorage on change
+  React.useEffect(() => {
+    saveTransactions(transactions);
+  }, [transactions]);
+  React.useEffect(() => {
+    saveRecurrings(recurrings);
+  }, [recurrings]);
+  React.useEffect(() => {
+    saveCategories(categories);
+  }, [categories]);
+  React.useEffect(() => {
+    saveBudgets(budgets);
+  }, [budgets]);
 
   // Expand recurring transactions into dated instances
   const allTransactions = useMemo(() => {
     return addRecurringInstances(transactions, recurrings);
   }, [transactions, recurrings]);
 
-  // Export/Import handlers
+  // Export/Import handlers (per-user)
   const handleExport = () => {
-    const categories = loadData('categories');
-    const budgets = loadData('budgets');
     const data = {
       transactions,
       recurrings,
@@ -85,23 +138,14 @@ const App: React.FC = () => {
     reader.onload = evt => {
       try {
         const data = JSON.parse(evt.target?.result as string);
-        if (data.transactions) { setTransactions(data.transactions); saveData('transactions', data.transactions); }
-        if (data.recurrings) { setRecurrings(data.recurrings); saveData('recurrings', data.recurrings); }
-        if (data.categories) saveData('categories', data.categories);
-        if (data.budgets) saveData('budgets', data.budgets);
-        window.location.reload(); // reload to ensure all state is synced
+        if (data.transactions) { setTransactions(data.transactions); }
+        if (data.recurrings) { setRecurrings(data.recurrings); }
+        if (data.categories) { setCategories(data.categories); }
+        if (data.budgets) { setBudgets(data.budgets); }
       } catch (err) { alert('Invalid file.'); }
     };
     reader.readAsText(file);
   };
-
-  // Save to localStorage on change
-  React.useEffect(() => {
-    saveData('transactions', transactions);
-  }, [transactions]);
-  React.useEffect(() => {
-    saveData('recurrings', recurrings);
-  }, [recurrings]);
 
   // Get transactions for selected day
   const dayTxs = useMemo(() =>
@@ -139,7 +183,6 @@ const App: React.FC = () => {
       </div>
       {/* Tabs */}
       <div className="absolute left-0 right-0 top-0 flex flex-col items-center mt-4 z-40">
-
         <div className="flex gap-2 mb-6">
           <button
             className={`px-4 py-2 rounded-t ${tab === 'calendar' ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200'}`}
@@ -164,6 +207,12 @@ const App: React.FC = () => {
             onClick={() => setTab('graphs')}
           >
             Graphs
+          </button>
+          <button
+            className={`px-4 py-2 rounded-t ${tab === 'users' ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200'}`}
+            onClick={() => setTab('users')}
+          >
+            Users
           </button>
         </div>
       </div>
@@ -221,6 +270,17 @@ const App: React.FC = () => {
       {tab === 'graphs' && (
         <main className="flex-1 p-8 pt-24 flex justify-center items-start">
           <SpendingByCategoryChart transactions={allTransactions} />
+        </main>
+      )}
+      {tab === 'users' && (
+        <main className="flex-1 p-8 pt-20 flex justify-center items-start">
+          <UserManagementTab
+            users={users}
+            currentUserId={currentUserId || ''}
+            onCreateUser={handleCreateUser}
+            onSwitchUser={handleSwitchUser}
+            onDeleteUser={handleDeleteUser}
+          />
         </main>
       )}
     </div>
