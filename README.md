@@ -73,6 +73,7 @@ A personal budgeting app with a calendar view, recurring transactions, and real-
 ## Notes
 - This app is a work in progress. See the README for planned features and current limitations.
 - If you encounter issues or have suggestions, feel free to open an issue or contribute!
+- Supports multiple profiles. Must add at least one user in the "Users" tab for tabs to interact with eachother and save.
 
   index.css
 ```
