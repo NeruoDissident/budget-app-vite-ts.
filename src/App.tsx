@@ -46,6 +46,9 @@ import {
 import UserManagementTab from './components/UserManagementTab';
 
 const App: React.FC = () => {
+  // Helper: total remaining budgets for current month
+  // Helper: months left in year (including current month)
+
   // Tab state for switching between calendar, recurring, budgets, graphs, and users
   const [tab, setTab] = useState<'calendar' | 'recurring' | 'budgets' | 'graphs' | 'users'>('calendar');
   // Recurring editing state
@@ -174,6 +177,21 @@ const App: React.FC = () => {
   // Balances
   const balances = useMemo(() => computeBalances(allTransactions), [allTransactions]);
 
+  // Projected end-of-month balance calculation
+  const projectedEndOfMonthBalance = useMemo(() => {
+    if (!allTransactions.length) return 0;
+    const today = new Date();
+    const month = today.getMonth();
+    const year = today.getFullYear();
+    const endOfMonthDate = new Date(year, month + 1, 0);
+    // Only include transactions up to and including the last day of this month
+    const txsUpToEndOfMonth = allTransactions.filter(tx => {
+      const txDate = new Date(tx.date);
+      return txDate <= endOfMonthDate;
+    });
+    return txsUpToEndOfMonth.reduce((sum, tx) => sum + tx.amount, 0);
+  }, [allTransactions]);
+
   // Transaction CRUD
   const handleAdd = (tx: Transaction) => setTransactions(ts => [...ts, tx]);
   const handleEdit = (tx: Transaction) => setTransactions(ts => ts.map(t => t.id === tx.id ? tx : t));
@@ -247,6 +265,9 @@ const App: React.FC = () => {
             editingTx={editingTx}
             setEditingTx={setEditingTx}
             transactions={allTransactions}
+            projectedEndOfMonthBalance={projectedEndOfMonthBalance}
+            totalRemainingBudgets={budgets.reduce((sum, b) => sum + (b.amount - (allTransactions.filter(tx => tx.category === b.category && tx.amount < 0 && tx.date.slice(0,7) === new Date().toISOString().slice(0,7)).reduce((s, tx) => s + Math.abs(tx.amount), 0))), 0)}
+            monthsLeftInYear={12 - new Date().getMonth()}
           />
           <main className="flex-1 p-8 pt-20 flex justify-center items-start">
             <Calendar

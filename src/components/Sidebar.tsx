@@ -10,6 +10,9 @@ interface SidebarProps {
     month: number;
     year: number;
   };
+  projectedEndOfMonthBalance: number;
+  totalRemainingBudgets: number;
+  monthsLeftInYear: number;
   selectedDay: string | null;
   dayTxs: Transaction[];
   onAdd: (tx: Transaction) => void;
@@ -20,7 +23,7 @@ interface SidebarProps {
   transactions: Transaction[];
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ balances, selectedDay, dayTxs, onAdd, onEdit, onDelete, editingTx, setEditingTx, transactions }) => {
+const Sidebar: React.FC<SidebarProps> = ({ balances, projectedEndOfMonthBalance, totalRemainingBudgets, monthsLeftInYear, selectedDay, dayTxs, onAdd, onEdit, onDelete, editingTx, setEditingTx, transactions }) => {
   return (
     <aside className="w-64 bg-white dark:bg-gray-900 shadow-lg p-4 flex flex-col gap-4 border-r border-gray-200 dark:border-gray-700">
       <h1 className="text-2xl font-bold mb-6 text-blue-600 dark:text-blue-400">Budget Calendar</h1>
@@ -34,9 +37,21 @@ const Sidebar: React.FC<SidebarProps> = ({ balances, selectedDay, dayTxs, onAdd,
             </span>
           </li>
           <li>
+            <span className="ml-4 text-xs">After Budgets:</span>
+            <span className="ml-2 text-xs" style={{ color: '#f59e42' }}>
+              ${(balances.today - totalRemainingBudgets).toFixed(2)}
+            </span>
+          </li>
+          <li>
             <span className="font-medium">End of Week:</span>
             <span className={balances.week >= 0 ? 'text-green-600 ml-2' : 'text-red-600 ml-2'}>
               ${balances.week.toFixed(2)}
+            </span>
+          </li>
+          <li>
+            <span className="ml-4 text-xs">After Budgets:</span>
+            <span className="ml-2 text-xs" style={{ color: '#f59e42' }}>
+              ${(balances.week - totalRemainingBudgets).toFixed(2)}
             </span>
           </li>
           <li>
@@ -46,11 +61,24 @@ const Sidebar: React.FC<SidebarProps> = ({ balances, selectedDay, dayTxs, onAdd,
             </span>
           </li>
           <li>
+            <span className="ml-4 text-xs">After Budgets:</span>
+            <span className="ml-2 text-xs" style={{ color: '#f59e42' }}>
+              ${(balances.month - totalRemainingBudgets).toFixed(2)}
+            </span>
+          </li>
+          <li>
             <span className="font-medium">End of Year:</span>
             <span className={balances.year >= 0 ? 'text-green-600 ml-2' : 'text-red-600 ml-2'}>
               ${balances.year.toFixed(2)}
             </span>
           </li>
+          <li>
+            <span className="ml-4 text-xs">After Budgets:</span>
+            <span className="ml-2 text-xs" style={{ color: '#f59e42' }}>
+              ${(balances.year - totalRemainingBudgets * monthsLeftInYear).toFixed(2)}
+            </span>
+          </li>
+
         </ul>
       </div>
       {/* Transaction section */}
