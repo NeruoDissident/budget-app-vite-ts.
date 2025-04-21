@@ -17,9 +17,10 @@ interface CalendarProps {
   onDelete: (id: string) => void;
   editingTx: Transaction | null;
   setEditingTx: (tx: Transaction | null) => void;
+  totalRemainingBudgets?: number;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ selectedDay, onSelectDay, transactions, onAdd, onEdit, onDelete, editingTx, setEditingTx }) => {
+const Calendar: React.FC<CalendarProps> = ({ selectedDay, onSelectDay, transactions, onAdd, onEdit, onDelete, editingTx, setEditingTx, totalRemainingBudgets }) => {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -143,7 +144,7 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDay, onSelectDay, transacti
           <span key={'pad-' + i}></span>
         ))}
         {/* Days of month */}
-        {days.map(day => {
+        {days.map((day, idx) => {
   const dateStr = day.toISOString().slice(0, 10);
   const begin = balancesByDay[dateStr]?.begin ?? 0;
   const end = balancesByDay[dateStr]?.end ?? 0;
@@ -151,14 +152,28 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDay, onSelectDay, transacti
   const recurringTxs = dayTxs.filter(tx => tx.recurring);
   const earnings = dayTxs.filter(tx => tx.amount > 0).reduce((sum, tx) => sum + tx.amount, 0);
   const spending = dayTxs.filter(tx => tx.amount < 0).reduce((sum, tx) => sum + tx.amount, 0);
+  // Highlight if this is the currently edited day
+  const isEditingDay = editingTx && editingTx.date === dateStr;
+  // Determine if this is the last day of the week or month
+  const isLastDayOfWeek = (idx + firstDayOfWeek + 1) % 7 === 0;
+  const isLastDayOfMonth = idx === days.length - 1;
   return (
     <div key={dateStr} className="relative group">
       <button
         className={[
           styles.calendarDay,
           selectedDay === dateStr ? styles.selected : '',
+          isEditingDay ? styles.editing : '',
           isToday(day) ? styles.today : '',
         ].join(' ')}
+        style={isEditingDay ? {
+          border: '2px solid #f59e42',
+          background: '#fff7e6',
+          color: '#b45309',
+          boxShadow: '0 0 0 3px #f59e4277',
+          zIndex: 2,
+          position: 'relative',
+        } : undefined}
         onClick={() => { onSelectDay(dateStr); }}
       >
         {recurringTxs.length > 0 && (
@@ -170,6 +185,23 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDay, onSelectDay, transacti
         <span className={styles.balance} style={{ color: end >= 0 ? '#22c55e' : '#ef4444' }}>
           ${end.toFixed(2)}
         </span>
+        {/* Show ending balance for last day of week/month */}
+        {isLastDayOfWeek && !isLastDayOfMonth && (
+          <>
+            <span className={styles.weekEndBalance}>Week End: ${end.toFixed(2)}</span>
+            <span className={styles.afterBudgetBalance}>
+              After Budget: ${(end - (totalRemainingBudgets ?? 0)).toFixed(2)}
+            </span>
+          </>
+        )}
+        {isLastDayOfMonth && (
+          <>
+            <span className={styles.monthEndBalance}>Month End: ${end.toFixed(2)}</span>
+            <span className={styles.afterBudgetBalance}>
+              After Budget: ${(end - (totalRemainingBudgets ?? 0)).toFixed(2)}
+            </span>
+          </>
+        )}
         <div className={styles.transactions}>
           {earnings > 0 && (
             <span className={styles.earnings}>

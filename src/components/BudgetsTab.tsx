@@ -20,7 +20,7 @@ function genId() { return Math.random().toString(36).slice(2); }
 
 import { Transaction } from '../data';
 interface BudgetsTabProps {
-  tab: string;
+  tab?: string;
   transactions: Transaction[];
 }
 const BudgetsTab: React.FC<BudgetsTabProps> = ({ tab, transactions }) => {
@@ -39,13 +39,11 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({ tab, transactions }) => {
   const [rangeEnd, setRangeEnd] = useState(month);
   const [newCatName, setNewCatName] = useState('');
 
-  // Reload categories and budgets whenever tab changes to 'budgets'
+  // Always load categories and budgets on mount
   useEffect(() => {
-    if (tab === 'budgets') {
-      setCategories(loadCategories());
-      setBudgets(loadBudgets());
-    }
-  }, [tab]);
+    setCategories(loadCategories());
+    setBudgets(loadBudgets());
+  }, []);
 
   // Add new budget
   const handleAdd = () => {

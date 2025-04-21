@@ -133,14 +133,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 bg-white dark:bg-gray-900 rounded shadow p-4 border border-gray-200 dark:border-gray-700">
       <input
-        className="border rounded px-2 py-1 flex-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
+        className="border rounded px-2 py-1 flex-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
         placeholder="Description"
         value={desc}
         onChange={e => setDesc(e.target.value)}
         required
       />
       <input
-        className="border rounded px-2 py-1 flex-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
+        className="border rounded px-2 py-1 flex-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
         placeholder="Amount"
         value={amount}
         onChange={e => setAmount(e.target.value)}
@@ -162,7 +162,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         {showAddCategory ? (
           <div className="mt-2 w-full">
             <input
-              className="border rounded px-3 py-2 w-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-base mb-2"
+              className="border rounded px-3 py-2 w-full bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-base mb-2"
               placeholder="New category name"
               value={newCategoryName}
               onChange={e => setNewCategoryName(e.target.value)}
@@ -250,13 +250,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       </div>
       {isRecurring ? (
         <>
-          <select className="border rounded px-2 py-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400" value={type} onChange={e => setType(e.target.value as RecurrenceType)}>
+          <select className="border rounded px-2 py-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400" value={type} onChange={e => setType(e.target.value as RecurrenceType)}>
             <option value="monthly">Monthly</option>
             <option value="biweekly">Biweekly</option>
           </select>
           {type === 'monthly' && (
             <input
-              className="border rounded px-2 py-1 w-16 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
+              className="border rounded px-2 py-1 w-16 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
               type="number"
               min={1}
               max={31}
@@ -266,7 +266,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             />
           )}
           {type === 'biweekly' && (
-            <select className="border rounded px-2 py-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400" value={dayOfWeek} onChange={e => setDayOfWeek(Number(e.target.value))}>
+            <select className="border rounded px-2 py-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400" value={dayOfWeek} onChange={e => setDayOfWeek(Number(e.target.value))}>
               <option value={0}>Sunday</option>
               <option value={1}>Monday</option>
               <option value={2}>Tuesday</option>
@@ -277,14 +277,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             </select>
           )}
           <input
-            className="border rounded px-2 py-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
+            className="border rounded px-2 py-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
             type="date"
             value={startDate}
             onChange={e => setStartDate(e.target.value)}
             required
           />
           <input
-            className="border rounded px-2 py-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
+            className="border rounded px-2 py-1 text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-400"
             type="date"
             value={endDate}
             onChange={e => setEndDate(e.target.value)}

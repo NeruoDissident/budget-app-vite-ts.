@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import TransactionForm from './components/TransactionForm';
 import RecurringTab from './components/RecurringTab';
 import BudgetsTab from './components/BudgetsTab';
+import GoalsTab, { Goal } from './components/GoalsTab';
 import { Transaction, RecurringTransaction, computeBalances, addRecurringInstances } from './data';
 import { startOfToday } from 'date-fns';
 
@@ -46,11 +47,10 @@ import {
 import UserManagementTab from './components/UserManagementTab';
 
 const App: React.FC = () => {
-  // Helper: total remaining budgets for current month
-  // Helper: months left in year (including current month)
 
-  // Tab state for switching between calendar, recurring, budgets, graphs, and users
-  const [tab, setTab] = useState<'calendar' | 'recurring' | 'budgets' | 'graphs' | 'users'>('calendar');
+
+  // Tab state for switching between calendar, recurring, budgets, graphs, goals, and users
+  const [tab, setTab] = useState<'calendar' | 'recurring' | 'budgets' | 'graphs' | 'goals' | 'users'>('calendar');
   // Recurring editing state
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
   // Theme state: 'default', 'retro', 'synthwave'
@@ -60,6 +60,120 @@ const App: React.FC = () => {
     }
     return 'default';
   });
+  // User state
+  const [users, setUsers] = useState<User[]>(getUsers());
+  const [currentUserId, setCurrentUserIdState] = useState<string | null>(getCurrentUserId());
+  // App data state
+  const [transactions, setTransactions] = useState<Transaction[]>(() => loadTransactions());
+  const [recurrings, setRecurrings] = useState<RecurringTransaction[]>(() => loadRecurrings());
+  const [categories, setCategories] = useState<Category[]>(() => loadCategories());
+  const [budgets, setBudgets] = useState<Budget[]>(() => loadBudgets());
+
+  // Reload budgets from storage whenever Budgets tab is selected
+  React.useEffect(() => {
+    if (tab === 'budgets') {
+      setBudgets(loadBudgets());
+    }
+  }, [tab]);
+  const [selectedDay, setSelectedDay] = useState<SelectedDay>(startOfToday().toISOString().slice(0, 10));
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+
+  // Calculate total remaining budgets for the current month
+  const now = new Date();
+  const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM
+  const totalRemainingBudgets = useMemo(() => {
+    // Only count budgets for current month or recurring
+    return budgets.reduce((sum, b) => {
+      if (
+        (b.month && b.month === currentMonth) ||
+        (!b.month && !b.endMonth && b.recurring) ||
+        (!b.month && !b.recurring)
+      ) {
+        return sum + b.amount;
+      }
+      // If budget has a range, check if currentMonth is in range
+      if (b.month && b.endMonth) {
+        if (b.month <= currentMonth && currentMonth <= b.endMonth) {
+          return sum + b.amount;
+        }
+      }
+      return sum;
+    }, 0);
+  }, [budgets, currentMonth]);
+  // Calculate months left in year
+  const monthsLeftInYear = 12 - now.getMonth();
+
+  // Expand recurring transactions into dated instances
+  const allTransactions = useMemo(() => {
+    return addRecurringInstances(transactions, recurrings);
+  }, [transactions, recurrings]);
+
+  // Balances
+  const balances = useMemo(() => computeBalances(allTransactions), [allTransactions]);
+
+  // Goals state
+  const [goals, setGoals] = useState<Goal[]>(() => {
+    try {
+      const stored = localStorage.getItem('goals');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  // Save goals to localStorage
+  React.useEffect(() => {
+    localStorage.setItem('goals', JSON.stringify(goals));
+  }, [goals]);
+  // Add, edit, delete handlers
+  const handleAddGoal = (goal: Goal) => setGoals(gs => [...gs, goal]);
+  const handleEditGoal = (goal: Goal) => setGoals(gs => gs.map(g => g.id === goal.id ? goal : g));
+  const handleDeleteGoal = (id: string) => setGoals(gs => gs.filter(g => g.id !== id));
+  // Projected dates for goals
+  // Calculate average net savings per month (income - expenses)
+  const avgMonthlyNet = React.useMemo(() => {
+    if (!allTransactions.length) return 0;
+    const txsByMonth: Record<string, number> = {};
+    allTransactions.forEach(tx => {
+      const ym = tx.date.slice(0, 7);
+      txsByMonth[ym] = (txsByMonth[ym] || 0) + tx.amount;
+    });
+    const months = Object.keys(txsByMonth);
+    if (!months.length) return 0;
+    const total = Object.values(txsByMonth).reduce((a, b) => a + b, 0);
+    return total / months.length;
+  }, [allTransactions]);
+  // For each goal, project both optimistic and conservative dates
+  const projectedDates: Record<string, { optimistic: string | null; conservative: string | null }> = React.useMemo(() => {
+    const today = new Date();
+    let currentBalance = balances.today;
+    let conservativeBalance = balances.today - totalRemainingBudgets;
+    // Conservative net: reduce avgMonthlyNet by budget spread over months left in year
+    const months = monthsLeftInYear > 0 ? monthsLeftInYear : 1;
+    const conservativeNet = avgMonthlyNet - (totalRemainingBudgets / months);
+    const results: Record<string, { optimistic: string | null; conservative: string | null }> = {};
+    goals.forEach(goal => {
+      // Optimistic
+      let optimistic: string | null = null;
+      if (goal.target <= currentBalance) {
+        optimistic = 'Goal already reached!';
+      } else if (avgMonthlyNet > 0) {
+        const monthsNeeded = Math.ceil((goal.target - currentBalance) / avgMonthlyNet);
+        const projectedDate = new Date(today.getFullYear(), today.getMonth() + monthsNeeded, today.getDate());
+        optimistic = projectedDate.toISOString().slice(0, 10);
+      }
+      // Conservative
+      let conservative: string | null = null;
+      if (goal.target <= conservativeBalance) {
+        conservative = 'Goal already reached!';
+      } else if (conservativeNet > 0) {
+        const monthsNeeded = Math.ceil((goal.target - conservativeBalance) / conservativeNet);
+        const projectedDate = new Date(today.getFullYear(), today.getMonth() + monthsNeeded, today.getDate());
+        conservative = projectedDate.toISOString().slice(0, 10);
+      }
+      results[goal.id] = { optimistic, conservative };
+    });
+    return results;
+  }, [goals, balances.today, avgMonthlyNet, totalRemainingBudgets, monthsLeftInYear]);
 
   // Apply theme to document body
   React.useEffect(() => {
@@ -78,10 +192,6 @@ const App: React.FC = () => {
       localStorage.removeItem('theme');
     }
   }, [theme]);
-
-  // User state
-  const [users, setUsers] = useState<User[]>(getUsers());
-  const [currentUserId, setCurrentUserIdState] = useState<string | null>(getCurrentUserId());
 
   // Reload users from storage
   const reloadUsers = () => setUsers(getUsers());
@@ -114,14 +224,6 @@ const App: React.FC = () => {
     setTab('calendar');
   };
 
-  // App data state
-  const [transactions, setTransactions] = useState<Transaction[]>(() => loadTransactions());
-  const [recurrings, setRecurrings] = useState<RecurringTransaction[]>(() => loadRecurrings());
-  const [categories, setCategories] = useState<Category[]>(() => loadCategories());
-  const [budgets, setBudgets] = useState<Budget[]>(() => loadBudgets());
-  const [selectedDay, setSelectedDay] = useState<SelectedDay>(startOfToday().toISOString().slice(0, 10));
-  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
-
   // Save to localStorage on change
   React.useEffect(() => {
     saveTransactions(transactions);
@@ -135,11 +237,6 @@ const App: React.FC = () => {
   React.useEffect(() => {
     saveBudgets(budgets);
   }, [budgets]);
-
-  // Expand recurring transactions into dated instances
-  const allTransactions = useMemo(() => {
-    return addRecurringInstances(transactions, recurrings);
-  }, [transactions, recurrings]);
 
   // Export/Import handlers (per-user)
   const handleExport = () => {
@@ -174,8 +271,6 @@ const App: React.FC = () => {
     [allTransactions, selectedDay]
   );
 
-  // Balances
-  const balances = useMemo(() => computeBalances(allTransactions), [allTransactions]);
 
   // Projected end-of-month balance calculation
   const projectedEndOfMonthBalance = useMemo(() => {
@@ -245,6 +340,12 @@ const App: React.FC = () => {
             Graphs
           </button>
           <button
+            className={`px-4 py-2 rounded-t ${tab === 'goals' ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200'}`}
+            onClick={() => setTab('goals')}
+          >
+            Goals
+          </button>
+          <button
             className={`px-4 py-2 rounded-t ${tab === 'users' ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200'}`}
             onClick={() => setTab('users')}
           >
@@ -266,7 +367,7 @@ const App: React.FC = () => {
             setEditingTx={setEditingTx}
             transactions={allTransactions}
             projectedEndOfMonthBalance={projectedEndOfMonthBalance}
-            totalRemainingBudgets={budgets.reduce((sum, b) => sum + (b.amount - (allTransactions.filter(tx => tx.category === b.category && tx.amount < 0 && tx.date.slice(0,7) === new Date().toISOString().slice(0,7)).reduce((s, tx) => s + Math.abs(tx.amount), 0))), 0)}
+            totalRemainingBudgets={budgets.reduce((sum, b) => sum + (b.amount - (allTransactions.filter(tx => tx.category === b.categoryId && tx.amount < 0 && tx.date.slice(0,7) === new Date().toISOString().slice(0,7)).reduce((s, tx) => s + Math.abs(tx.amount), 0))), 0)}
             monthsLeftInYear={12 - new Date().getMonth()}
           />
           <main className="flex-1 p-8 pt-20 flex justify-center items-start">
@@ -279,6 +380,7 @@ const App: React.FC = () => {
               onDelete={handleDelete}
               editingTx={editingTx}
               setEditingTx={setEditingTx}
+              totalRemainingBudgets={totalRemainingBudgets}
             />
             
           </main>
@@ -299,12 +401,26 @@ const App: React.FC = () => {
       )}
       {tab === 'budgets' && (
         <main className="flex-1 p-8 pt-20 flex justify-center items-start">
-          <BudgetsTab tab={tab} transactions={allTransactions} />
+          <BudgetsTab transactions={allTransactions} />
         </main>
       )}
       {tab === 'graphs' && (
         <main className="flex-1 p-8 pt-24 flex justify-center items-start">
           <SpendingByCategoryChart transactions={allTransactions} />
+        </main>
+      )}
+      {tab === 'goals' && (
+        <main className="flex-1 p-8 pt-20 flex justify-center items-start">
+          <GoalsTab
+            goals={goals}
+            onAddGoal={handleAddGoal}
+            onEditGoal={handleEditGoal}
+            onDeleteGoal={handleDeleteGoal}
+            projectedDates={projectedDates}
+            showConservativeDates
+            totalRemainingBudgets={totalRemainingBudgets}
+            monthsLeftInYear={monthsLeftInYear}
+          />
         </main>
       )}
       {tab === 'users' && (

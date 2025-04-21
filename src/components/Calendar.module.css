@@ -30,6 +30,70 @@
 .calendarDay.selected {
   @apply border-blue-500 bg-blue-50 dark:bg-blue-900;
 }
+.calendarDay.editing {
+  border: 2px solid #f59e42 !important;
+  background: #fff7e6 !important;
+  color: #b45309 !important;
+  box-shadow: 0 0 0 3px #f59e4277;
+}
+
+.dark .calendarDay.editing {
+  border: 2px solid #fbbf24 !important;
+  background: #3b2600 !important;
+  color: #fbbf24 !important;
+  box-shadow: 0 0 0 3px #fbbf2477;
+}
+
+.retro .calendarDay.editing {
+  border: 2px solid #33ff33 !important;
+  background: #000 !important;
+  color: #33ff33 !important;
+  box-shadow: 0 0 0 3px #33ff3377;
+}
+
+.synthwave .calendarDay.editing {
+  border: 2px solid #ff00cc !important;
+  background: #2a0033 !important;
+  color: #fffb96 !important;
+  box-shadow: 0 0 0 3px #ff00cc77;
+}
+
+
+
+.calendarDay .weekEndBalance, .calendarDay .monthEndBalance {
+  @apply text-xs font-semibold mt-1 block;
+  color: #0ea5e9;
+}
+.dark .calendarDay .weekEndBalance, .dark .calendarDay .monthEndBalance {
+  color: #38bdf8 !important;
+}
+
+.calendarDay .afterBudgetBalance {
+  @apply text-xs font-semibold mt-0 block;
+  color: #fb923c;
+}
+.dark .calendarDay .afterBudgetBalance {
+  color: #fdba74 !important;
+}
+.retro .calendarDay .afterBudgetBalance {
+  color: #ff9900 !important;
+  background: #000 !important;
+}
+.synthwave .calendarDay .afterBudgetBalance {
+  color: #ffb86c !important;
+}
+
+.retro .calendarDay .weekEndBalance, .retro .calendarDay .monthEndBalance {
+  color: #33ff33 !important;
+  background: #000 !important;
+}
+.synthwave .calendarDay .weekEndBalance, .synthwave .calendarDay .monthEndBalance {
+  color: #fffb96 !important;
+  background: #2a0033 !important;
+}
+
+
+
 .calendarDay.today {
   @apply ring-2 ring-blue-400;
 }

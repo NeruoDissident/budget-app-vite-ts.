@@ -2,7 +2,10 @@ import React from 'react';
 import { Pie } from 'react-chartjs-2';
 import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Transaction } from '../data';
-import styles from './SpendingByCategoryChart.module.css';
+import styles from './SpendingByCategoryChart.module.css'; // Ensure this file exists and is in the same directory
+// Fallback: if styles is undefined, use a default style object
+const fallbackStyles = { chartContainer: 'w-full max-w-md mx-auto' };
+
 
 Chart.register(ArcElement, Tooltip, Legend);
 
