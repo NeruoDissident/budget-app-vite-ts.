@@ -1,265 +1,243 @@
-import React, { useState } from 'react';
-import { Category, Budget, Transaction, loadCategories, saveCategories, loadBudgets, saveBudgets } from '../data';
-import { v4 as uuidv4 } from 'uuid';
+import React, { useState, useEffect } from 'react';
+import { loadCategories, loadBudgets, saveBudgets, saveCategories, Budget, Category } from '../data';
 
-import { startOfWeek, endOfWeek, addWeeks, format, isWithinInterval, parseISO } from 'date-fns';
-
-interface BudgetsTabProps {
-  selectedDay: string;
-  setSelectedDay: (d: string) => void;
-  transactions: Transaction[];
-  onExport: () => void;
-  onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
+function getMonthLabel(month: string) {
+  const [year, m] = month.split('-');
+  const date = new Date(Number(year), Number(m) - 1, 1);
+  return date.toLocaleString('default', { month: 'long', year: 'numeric' });
 }
+function getPrevMonth(month: string) {
+  const [year, m] = month.split('-').map(Number);
+  const d = new Date(year, m - 2, 1);
+  return d.toISOString().slice(0, 7);
+}
+function getNextMonth(month: string) {
+  const [year, m] = month.split('-').map(Number);
+  const d = new Date(year, m, 1);
+  return d.toISOString().slice(0, 7);
+}
+function genId() { return Math.random().toString(36).slice(2); }
 
-const BudgetsTab: React.FC<BudgetsTabProps> = ({ selectedDay, setSelectedDay, transactions, onExport, onImport }) => {
-  const [categories, setCategories] = useState<Category[]>(() => loadCategories());
-  const [budgets, setBudgets] = useState<Budget[]>(() => loadBudgets());
-  const [newCat, setNewCat] = useState('');
-  const [newCatBudget, setNewCatBudget] = useState('');
-  const [budgetRecurrence, setBudgetRecurrence] = useState<'this' | 'future'>('this');
-  const [editingCat, setEditingCat] = useState<Category | null>(null);
-  const [editingBudget, setEditingBudget] = useState<{ id: string; amount: string } | null>(null);
-  const [showAfterBudget, setShowAfterBudget] = useState(false);
+import { Transaction } from '../data';
+interface BudgetsTabProps {
+  tab: string;
+  transactions: Transaction[];
+}
+const BudgetsTab: React.FC<BudgetsTabProps> = ({ tab, transactions }) => {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [amount, setAmount] = useState('');
+  const [editingId, setEditingId] = useState<string|null>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [month, setMonth] = useState(() => {
+    const now = new Date();
+    return now.toISOString().slice(0, 7); // YYYY-MM
+  });
+  const [recurrence, setRecurrence] = useState<'this'|'recurring'|'range'>('this');
+  const [rangeStart, setRangeStart] = useState(month);
+  const [rangeEnd, setRangeEnd] = useState(month);
+  const [newCatName, setNewCatName] = useState('');
 
-  // Add category (with optional budget)
-  const handleAddCategory = () => {
-    if (!newCat.trim()) return;
-    const cat: Category = { id: uuidv4(), name: newCat.trim() };
-    const updatedCats = [...categories, cat];
-    setCategories(updatedCats);
-    saveCategories(updatedCats);
-    // If budget entered, add it
-    if (newCatBudget && !isNaN(Number(newCatBudget))) {
-      const now = new Date(selectedDay);
-      const monthStr = now.toISOString().slice(0, 7); // YYYY-MM
-      const newBudget: Budget = {
-        id: uuidv4(),
-        categoryId: cat.id,
-        amount: Number(newCatBudget),
-        month: budgetRecurrence === 'this' ? monthStr : undefined,
-        recurring: budgetRecurrence === 'future',
-      };
-      const updatedBudgets = [...budgets, newBudget];
-      setBudgets(updatedBudgets);
-      saveBudgets(updatedBudgets);
+  // Reload categories and budgets whenever tab changes to 'budgets'
+  useEffect(() => {
+    if (tab === 'budgets') {
+      setCategories(loadCategories());
+      setBudgets(loadBudgets());
     }
-    setNewCat('');
-    setNewCatBudget('');
-    setBudgetRecurrence('this');
-  };
+  }, [tab]);
 
-
-  // Edit category name
-  const handleEditCategory = (id: string, name: string) => {
-    const updated = categories.map(c => c.id === id ? { ...c, name } : c);
-    setCategories(updated);
-    saveCategories(updated);
-    setEditingCat(null);
-  };
-
-  // Delete category
-  const handleDeleteCategory = (id: string) => {
-    const updated = categories.filter(c => c.id !== id);
-    setCategories(updated);
-    saveCategories(updated);
-    // Remove budget for this category
-    const budg = budgets.filter(b => b.categoryId !== id);
-    setBudgets(budg);
-    saveBudgets(budg);
-  };
-
-  // Set budget for category
-  const handleSetBudget = (categoryId: string, amount: string) => {
-    if (!amount || isNaN(Number(amount))) return;
-    const existing = budgets.find(b => b.categoryId === categoryId);
-    let updated: Budget[];
-    if (existing) {
-      updated = budgets.map(b => b.categoryId === categoryId ? { ...b, amount: Number(amount) } : b);
-    } else {
-      updated = [...budgets, { id: uuidv4(), categoryId, amount: Number(amount) }];
-    }
+  // Add new budget
+  const handleAdd = () => {
+    if (!selectedCategory || !amount || isNaN(Number(amount))) return;
+    const newBudget: Budget = {
+      id: Math.random().toString(36).slice(2),
+      categoryId: selectedCategory,
+      amount: Number(amount)
+    };
+    const updated = [...budgets, newBudget];
     setBudgets(updated);
     saveBudgets(updated);
-    setEditingBudget(null);
+    setSelectedCategory('');
+    setAmount('');
   };
 
-  // Determine week range based on selectedDay
-  // Month navigation
-  const now = new Date(selectedDay);
-  const monthStr = now.toISOString().slice(0, 7); // YYYY-MM
-  const monthLabel = format(now, 'MMMM yyyy');
-  const goPrevMonth = () => {
-    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    setSelectedDay(prev.toISOString().slice(0, 10));
-  };
-  const goNextMonth = () => {
-    const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    setSelectedDay(next.toISOString().slice(0, 10));
+  // Edit budget
+  const handleEdit = (id: string) => {
+    if (!editAmount || isNaN(Number(editAmount))) return;
+    const updated = budgets.map(b => b.id === id ? { ...b, amount: Number(editAmount) } : b);
+    setBudgets(updated);
+    saveBudgets(updated);
+    setEditingId(null);
+    setEditAmount('');
   };
 
-  // Calculate spent per budget for this month
-  const spentByBudget: Record<string, number> = {};
-  transactions.forEach(tx => {
-    if (!tx.budgetId) return;
-    const txDate = parseISO(tx.date);
-    // Only count transactions in the same month
-    if (txDate.getFullYear() === now.getFullYear() && txDate.getMonth() === now.getMonth()) {
-      spentByBudget[tx.budgetId] = (spentByBudget[tx.budgetId] || 0) + Math.abs(tx.amount);
-    }
-  });
+  // Delete budget
+  const handleDelete = (id: string) => {
+    const updated = budgets.filter(b => b.id !== id);
+    setBudgets(updated);
+    saveBudgets(updated);
+  };
 
-  // Filter budgets for this month (recurring or explicit)
-  const budgetsForMonth = budgets.filter(b => (b.month === monthStr) || (b.recurring && (!b.month || b.month <= monthStr)));
 
-  // Calculate balances before/after budget
-  const totalIncome = transactions.filter(tx => {
-    const txDate = parseISO(tx.date);
-    return tx.amount > 0 && txDate.getFullYear() === now.getFullYear() && txDate.getMonth() === now.getMonth();
-  }).reduce((sum, tx) => sum + tx.amount, 0);
-  const totalExpense = transactions.filter(tx => {
-    const txDate = parseISO(tx.date);
-    return tx.amount < 0 && txDate.getFullYear() === now.getFullYear() && txDate.getMonth() === now.getMonth();
-  }).reduce((sum, tx) => sum + tx.amount, 0);
-  const totalBudget = budgetsForMonth.reduce((sum, b) => sum + b.amount, 0);
-  const balanceBeforeBudget = totalIncome + totalExpense;
-  const balanceAfterBudget = balanceBeforeBudget - totalBudget;
 
-  return (
+
+
+    return (
     <div className="w-full max-w-xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Budgets</h2>
-      <div className="flex gap-2 mb-4">
+      {/* Month navigation */}
+      <div className="flex items-center justify-between mb-4">
+        <button className="text-xl px-2" onClick={() => setMonth(getPrevMonth(month))}>&lt;</button>
+        <h2 className="text-2xl font-bold">Budgets for {getMonthLabel(month)}</h2>
+        <button className="text-xl px-2" onClick={() => setMonth(getNextMonth(month))}>&gt;</button>
+      </div>
+      {/* Add category UI */}
+      <div className="mb-4 flex gap-2">
+        <input
+          className="border rounded px-2 py-1 flex-1"
+          placeholder="New Category Name"
+          value={newCatName}
+          onChange={e => setNewCatName(e.target.value)}
+        />
         <button
-          className="px-2 py-1 text-xs rounded bg-green-500 text-white hover:bg-green-600"
-          onClick={onExport}
-        >Export Data</button>
-        <label className="px-2 py-1 text-xs rounded bg-blue-500 text-white hover:bg-blue-600 cursor-pointer">
-          Import Data
-          <input type="file" accept="application/json" className="hidden" onChange={onImport} />
-        </label>
-        <button
-          className="px-2 py-1 text-xs rounded bg-red-500 text-white hover:bg-red-600"
+          className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
           onClick={() => {
-            if (window.confirm('Are you sure you want to erase ALL data and reset the app? This cannot be undone.')) {
-              localStorage.clear();
-              alert('All data erased. The app will now reload.');
-              window.location.reload();
-            }
+            if (!newCatName.trim()) return;
+            const newCat: Category = { id: genId(), name: newCatName.trim() };
+            const updated = [...categories, newCat];
+            setCategories(updated);
+            saveCategories(updated);
+            setNewCatName('');
           }}
-        >Reset All Data</button>
+        >Add Category</button>
       </div>
-      <div className="flex items-center gap-4 mb-4">
-        <button className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={goPrevMonth}>&lt;</button>
-        <span className="font-semibold">Month: {monthLabel}</span>
-        <button className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={goNextMonth}>&gt;</button>
-        <label className="flex items-center gap-2 ml-4">
+      {/* Add budget UI */}
+      <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded shadow">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:gap-4">
+          <select
+            className="border rounded px-2 py-1 flex-1"
+            value={selectedCategory}
+            onChange={e => setSelectedCategory(e.target.value)}
+          >
+            <option value="">Select category</option>
+            {categories.filter(cat => !budgets.some(b => b.categoryId === cat.id && (
+              (b.recurring || (b.month && b.month === month)) || (b.month && b.month <= month && (!b.endMonth || b.endMonth >= month))
+            ))).map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
           <input
-            type="checkbox"
-            checked={showAfterBudget}
-            onChange={e => setShowAfterBudget(e.target.checked)}
-          />
-          <span className="text-xs">Show balances after budget</span>
-        </label>
-      </div>
-      <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded shadow flex flex-col gap-2">
-        <div>
-          <span className="font-semibold">Balance ({showAfterBudget ? 'After Budget' : 'Before Budget'}): </span>
-          <span className={showAfterBudget && balanceAfterBudget < 0 ? 'text-red-600' : 'text-green-600'}>
-            ${showAfterBudget ? balanceAfterBudget.toFixed(2) : balanceBeforeBudget.toFixed(2)}
-          </span>
-        </div>
-        <div className="text-xs text-gray-500">
-          <span>Total Income: ${totalIncome.toFixed(2)}</span> | <span>Total Expense: ${totalExpense.toFixed(2)}</span> | <span>Total Budget: ${totalBudget.toFixed(2)}</span>
-        </div>
-      </div>
-      <div className="mb-6">
-        <h3 className="font-semibold mb-2">Categories</h3>
-        <div className="flex gap-2 mb-2">
-          <input
-            className="border rounded px-2 py-1 flex-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100"
-            placeholder="Add new category"
-            value={newCat}
-            onChange={e => setNewCat(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleAddCategory()}
-          />
-          <input
-            className="border rounded px-2 py-1 w-28 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100"
-            placeholder="Budget ($)"
-            value={newCatBudget}
-            onChange={e => setNewCatBudget(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleAddCategory()}
+            className="border rounded px-2 py-1 w-28"
+            placeholder="Amount ($)"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
             type="number"
             min="0"
           />
-          <select
-            className="border rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100"
-            value={budgetRecurrence}
-            onChange={e => setBudgetRecurrence(e.target.value as 'this' | 'future')}
-          >
-            <option value="this">This month only</option>
-            <option value="future">Every month going forward</option>
-          </select>
-          <button className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600" onClick={handleAddCategory}>Add</button>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs">Recurrence:</label>
+            <select
+              className="border rounded px-2 py-1"
+              value={recurrence}
+              onChange={e => setRecurrence(e.target.value as any)}
+            >
+              <option value="this">This Month Only</option>
+              <option value="recurring">Recurring</option>
+              <option value="range">Start/End Month</option>
+            </select>
+          </div>
+          {recurrence === 'range' && (
+            <div className="flex gap-1 items-end">
+              <div>
+                <label className="text-xs">Start:</label>
+                <input type="month" className="border rounded px-2 py-1" value={rangeStart} onChange={e => setRangeStart(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs">End:</label>
+                <input type="month" className="border rounded px-2 py-1" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} />
+              </div>
+            </div>
+          )}
+          <button className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600" onClick={() => {
+            if (!selectedCategory || !amount || isNaN(Number(amount))) return;
+            let newBudget: Budget;
+            if (recurrence === 'this') {
+              newBudget = { id: genId(), categoryId: selectedCategory, amount: Number(amount), month };
+            } else if (recurrence === 'recurring') {
+              newBudget = { id: genId(), categoryId: selectedCategory, amount: Number(amount), recurring: true };
+            } else {
+              newBudget = { id: genId(), categoryId: selectedCategory, amount: Number(amount), month: rangeStart, endMonth: rangeEnd } as any;
+            }
+            const updated = [...budgets, newBudget];
+            setBudgets(updated);
+            saveBudgets(updated);
+            setSelectedCategory('');
+            setAmount('');
+          }}>Add Budget</button>
         </div>
-        <ul className="divide-y">
-          {categories.map(cat => (
-            <li key={cat.id} className="flex items-center justify-between py-2">
-              {editingCat?.id === cat.id ? (
-                <>
-                  <input
-                    className="border rounded px-2 py-1 flex-1 mr-2"
-                    value={editingCat.name}
-                    onChange={e => setEditingCat({ ...editingCat, name: e.target.value })}
-                    onKeyDown={e => e.key === 'Enter' && handleEditCategory(cat.id, editingCat.name)}
-                  />
-                  <button className="text-blue-500 mr-2" onClick={() => handleEditCategory(cat.id, editingCat.name)}>Save</button>
-                  <button className="text-gray-500" onClick={() => setEditingCat(null)}>Cancel</button>
-                </>
-              ) : (
-                <>
-                  <span>{cat.name}</span>
-                  <div>
-                    <button className="text-blue-500 mr-2" onClick={() => setEditingCat(cat)}>Edit</button>
-                    <button className="text-red-500" onClick={() => handleDeleteCategory(cat.id)}>Delete</button>
-                  </div>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
       </div>
-      <div>
-        <h3 className="font-semibold mb-2">Budgets (Monthly)</h3>
-        <ul className="divide-y">
-          {budgetsForMonth.map(bud => {
-            const cat = categories.find(c => c.id === bud.categoryId);
-            const spent = spentByBudget[bud.id] || 0;
-            const remaining = bud.amount - spent;
-            return (
-              <li key={bud.id} className="py-4">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold">{cat?.name || 'Uncategorized'}</span>
-                  <span className="text-xs text-gray-500">Budget: ${`$${bud.amount.toFixed(2)}`}</span>
-                  {bud.recurring ? <span className="ml-2 text-xs text-blue-500">Recurring</span> : bud.month ? <span className="ml-2 text-xs text-gray-400">{bud.month}</span> : null}
-                </div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs">Spent: <span className="font-semibold">${`$${spent.toFixed(2)}`}</span></span>
-                  <span className="text-xs">Remaining: <span className={remaining < 0 ? 'text-red-600' : 'text-green-600'}>${`$${remaining.toFixed(2)}`}</span></span>
-                </div>
-                <div className="w-full h-4 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden relative">
-                  <div
-                    className={`h-4 rounded transition-all duration-300 ${remaining < 0 ? 'bg-red-500' : 'bg-blue-500'}`}
-                    style={{ width: `${Math.min(100, (spent / bud.amount) * 100)}%` }}
-                  ></div>
-                  {/* Overbudget indicator */}
-                  {remaining < 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white bg-red-700 bg-opacity-80">Over</div>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+      {/* List budgets for this month */}
+      <ul className="divide-y mb-8">
+        {budgets.map(budget => {
+          const cat = categories.find(c => c.id === budget.categoryId);
+          // Calculate spent for this budget in this month
+          const spent = transactions
+            .filter(tx => {
+              const txMonth = tx.date.slice(0, 7);
+              return (
+                (tx.budgetId === budget.id || tx.category === cat?.name) &&
+                txMonth === month
+              );
+            })
+            .reduce((sum, tx) => sum + (tx.amount < 0 ? -tx.amount : 0), 0); // Only count expenses
+          const remaining = budget.amount - spent;
+          const percent = Math.min(1, spent / budget.amount);
+          let barColor = 'bg-green-400';
+          if (percent > 0.9) barColor = 'bg-red-500';
+          else if (percent > 0.7) barColor = 'bg-yellow-400';
+          return (
+            <li key={budget.id} className="py-2 flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="flex-1 font-medium">{cat ? cat.name : 'Uncategorized'}</span>
+                {editingId === budget.id ? (
+                  <>
+                    <input
+                      className="border rounded px-2 py-1 w-24"
+                      type="number"
+                      value={editAmount}
+                      onChange={e => setEditAmount(e.target.value)}
+                    />
+                    <button className="bg-blue-500 text-white px-2 py-1 rounded ml-1" onClick={() => handleEdit(budget.id)}>Save</button>
+                    <button className="bg-gray-300 text-gray-700 px-2 py-1 rounded ml-1" onClick={() => setEditingId(null)}>Cancel</button>
+                  </>
+                ) : (
+                  <>
+                    <span className="w-24">${budget.amount.toFixed(2)}</span>
+                    <button className="text-blue-500 ml-2" onClick={() => { setEditingId(budget.id); setEditAmount(budget.amount.toString()); }}>Edit</button>
+                    <button className="text-red-500 ml-2" onClick={() => handleDelete(budget.id)}>Delete</button>
+                  </>
+                )}
+              </div>
+              {/* Progress bar and remaining */}
+              <div className="w-full h-3 bg-gray-200 rounded mt-1">
+                <div
+                  className={`h-3 rounded ${barColor}`}
+                  style={{ width: `${percent * 100}%`, transition: 'width 0.4s' }}
+                ></div>
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-300 flex justify-between">
+                <span>Spent: ${spent.toFixed(2)}</span>
+                <span>Remaining: ${remaining.toFixed(2)} / ${budget.amount.toFixed(2)}</span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      {/* Debug section */}
+      <div className="mt-8 p-2 bg-yellow-50 text-xs rounded">
+        <div className="font-bold mb-1">Debug Info:</div>
+        <div><b>Categories (from storage):</b> <pre>{JSON.stringify(categories, null, 2)}</pre></div>
+        <div><b>Budgets (from storage):</b> <pre>{JSON.stringify(budgets, null, 2)}</pre></div>
       </div>
     </div>
   );

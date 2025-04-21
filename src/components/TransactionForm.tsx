@@ -13,8 +13,10 @@ interface TransactionFormProps {
   onEditRecurring?: (rt: RecurringTransaction) => void;
   editingRecurring?: RecurringTransaction | null;
   setEditingRecurring?: (rt: RecurringTransaction | null) => void;
+  transactions?: Transaction[];
 }
 
+import { loadTransactions } from '../data';
 const TransactionForm: React.FC<TransactionFormProps> = ({
   selectedDay,
   onAdd,
@@ -26,6 +28,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   onEditRecurring,
   editingRecurring,
   setEditingRecurring,
+  transactions: propTransactions,
 }) => {
   const [categories, setCategories] = React.useState(() => loadCategories());
   const [budgets, setBudgets] = React.useState(() => loadBudgets());
@@ -33,6 +36,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const [budgetId, setBudgetId] = React.useState<string>('');
   const [showAddCategory, setShowAddCategory] = React.useState(false);
   const [newCategoryName, setNewCategoryName] = React.useState('');
+
+  // Use the transactions prop if provided, otherwise fall back to loadTransactions
+  const transactions = propTransactions ?? loadTransactions();
 
   React.useEffect(() => {
     setCategories(loadCategories());
@@ -210,18 +216,36 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         )}
       </div>
       <div className="mb-2">
-        <label className="block text-sm font-medium mb-1">Budget (Weekly)</label>
+        <label className="block text-sm font-medium mb-1">Budget (Monthly)</label>
         <select
           className="border rounded px-2 py-1 w-full bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-100"
           value={budgetId}
           onChange={e => setBudgetId(e.target.value)}
         >
           <option value="">None</option>
-          {budgets.map(bud => (
-            <option key={bud.id} value={bud.id}>
-              {categories.find(cat => cat.id === bud.categoryId)?.name || 'Uncategorized'} (${`$${bud.amount.toFixed(2)}`}/week)
-            </option>
-          ))}
+          {budgets.map(bud => {
+            const cat = categories.find(cat => cat.id === bud.categoryId);
+            // Calculate spent for this budget in the current month
+            let spent = 0;
+            let month = '';
+            if (selectedDay) month = selectedDay.slice(0, 7);
+            else month = new Date().toISOString().slice(0, 7);
+            spent = transactions
+              .filter(tx => {
+                const txMonth = tx.date.slice(0, 7);
+                return (
+                  (tx.budgetId === bud.id || tx.category === cat?.name) &&
+                  txMonth === month
+                );
+              })
+              .reduce((sum, tx) => sum + (tx.amount < 0 ? -tx.amount : 0), 0);
+            const remaining = bud.amount - spent;
+            return (
+              <option key={bud.id} value={bud.id}>
+                {cat ? cat.name : 'Uncategorized'} — ${remaining.toFixed(2)} left
+              </option>
+            );
+          })}
         </select>
       </div>
       {isRecurring ? (

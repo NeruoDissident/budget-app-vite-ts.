@@ -17,9 +17,10 @@ interface SidebarProps {
   onDelete: (id: string) => void;
   editingTx: Transaction | null;
   setEditingTx: (tx: Transaction | null) => void;
+  transactions: Transaction[];
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ balances, selectedDay, dayTxs, onAdd, onEdit, onDelete, editingTx, setEditingTx }) => {
+const Sidebar: React.FC<SidebarProps> = ({ balances, selectedDay, dayTxs, onAdd, onEdit, onDelete, editingTx, setEditingTx, transactions }) => {
   return (
     <aside className="w-64 bg-white dark:bg-gray-900 shadow-lg p-4 flex flex-col gap-4 border-r border-gray-200 dark:border-gray-700">
       <h1 className="text-2xl font-bold mb-6 text-blue-600 dark:text-blue-400">Budget Calendar</h1>
@@ -61,6 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({ balances, selectedDay, dayTxs, onAdd,
           onEdit={onEdit}
           editingTx={editingTx}
           setEditingTx={setEditingTx}
+          transactions={transactions}
         />
         <ul className="mt-2 space-y-2">
           {dayTxs.map(tx => (

@@ -228,6 +228,7 @@ const App: React.FC = () => {
             onDelete={handleDelete}
             editingTx={editingTx}
             setEditingTx={setEditingTx}
+            transactions={allTransactions}
           />
           <main className="flex-1 p-8 pt-20 flex justify-center items-start">
             <Calendar
@@ -240,6 +241,7 @@ const App: React.FC = () => {
               editingTx={editingTx}
               setEditingTx={setEditingTx}
             />
+            
           </main>
         </>
       )}
@@ -258,13 +260,7 @@ const App: React.FC = () => {
       )}
       {tab === 'budgets' && (
         <main className="flex-1 p-8 pt-20 flex justify-center items-start">
-          <BudgetsTab
-            selectedDay={selectedDay!}
-            setSelectedDay={setSelectedDay}
-            transactions={allTransactions}
-            onExport={handleExport}
-            onImport={handleImport}
-          />
+          <BudgetsTab tab={tab} transactions={allTransactions} />
         </main>
       )}
       {tab === 'graphs' && (

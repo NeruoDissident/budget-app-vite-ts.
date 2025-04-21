@@ -36,6 +36,7 @@ export interface Budget {
   categoryId: string;
   amount: number; // monthly budget amount
   month?: string; // YYYY-MM, if present applies only to that month
+  endMonth?: string; // YYYY-MM, if present, budget applies from month to endMonth (inclusive)
   recurring?: boolean; // if true, applies every month going forward
 }
 
@@ -73,7 +74,9 @@ function saveUsers(users: User[]) {
 
 // Get current user ID
 export function getCurrentUserId(): string | null {
-  return localStorage.getItem(CURRENT_USER_KEY);
+  const id = localStorage.getItem(CURRENT_USER_KEY);
+  console.log('[getCurrentUserId]', { id });
+  return id;
 }
 
 // Set current user ID
@@ -113,7 +116,9 @@ export function deleteUser(id: string) {
 
 // Get storage key for user data
 function getUserDataKey(userId: string) {
-  return `budget-calendar-user-${userId}`;
+  const key = `budget-calendar-user-${userId}`;
+  console.log('[getUserDataKey]', { userId, key });
+  return key;
 }
 
 // Get user data
@@ -136,12 +141,14 @@ export function saveUserData(userId: string, data: AppUserData) {
 
 function getActiveUserData(): AppUserData {
   const userId = getCurrentUserId();
+  console.log('[getActiveUserData]', { userId });
   if (!userId) return { transactions: [], recurrings: [], categories: [], budgets: [] };
   return loadUserData(userId);
 }
 
 function setActiveUserData(data: AppUserData) {
   const userId = getCurrentUserId();
+  console.log('[setActiveUserData]', { userId, data });
   if (!userId) return;
   saveUserData(userId, data);
 }
@@ -163,26 +170,29 @@ export function saveRecurrings(recurrings: RecurringTransaction[]): void {
   setActiveUserData(data);
 }
 export function loadCategories(): Category[] {
-  return getActiveUserData().categories;
+  const categories = getActiveUserData().categories;
+  console.log('[loadCategories]', { categories });
+  return categories;
 }
 export function saveCategories(categories: Category[]): void {
   const data = getActiveUserData();
   data.categories = categories;
+  console.log('[saveCategories]', { categories, data });
   setActiveUserData(data);
 }
 export function loadBudgets(): Budget[] {
-  return getActiveUserData().budgets;
+  const budgets = getActiveUserData().budgets;
+  console.log('[loadBudgets]', { budgets });
+  return budgets;
 }
 export function saveBudgets(budgets: Budget[]): void {
   const data = getActiveUserData();
   data.budgets = budgets;
+  console.log('[saveBudgets]', { budgets, data });
   setActiveUserData(data);
 }
 
-export function getBudgetForWeek(budgets: Budget[], weekStart: string): Budget[] {
-  // Placeholder: implement logic if you want to support future week-specific budgets
-  return budgets;
-}
+
 
 // Expand recurring transactions into dated instances
 export function addRecurringInstances(transactions: Transaction[], recurrings: RecurringTransaction[]): Transaction[] {
@@ -200,6 +210,8 @@ export function addRecurringInstances(transactions: Transaction[], recurrings: R
             description: rt.description,
             amount: rt.amount,
             recurring: true,
+            category: rt.category,
+            budgetId: rt.budgetId,
           });
         }
         d = addDays(new Date(d.getFullYear(), d.getMonth() + 1, rt.dayOfMonth), 0);
@@ -216,6 +228,8 @@ export function addRecurringInstances(transactions: Transaction[], recurrings: R
             description: rt.description,
             amount: rt.amount,
             recurring: true,
+            category: rt.category,
+            budgetId: rt.budgetId,
           });
         }
         d = addDays(d, 14);
