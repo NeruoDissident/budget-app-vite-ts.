@@ -58,6 +58,24 @@ const App: React.FC = () => {
     return 'default';
   });
 
+  // Apply theme to document body
+  React.useEffect(() => {
+    const body = document.body;
+    body.classList.remove('retro', 'synthwave', 'dark');
+    if (theme === 'retro') {
+      body.classList.add('retro');
+    } else if (theme === 'synthwave') {
+      body.classList.add('synthwave');
+    } else if (theme === 'dark') {
+      body.classList.add('dark');
+    }
+    if (theme !== 'default') {
+      localStorage.setItem('theme', theme);
+    } else {
+      localStorage.removeItem('theme');
+    }
+  }, [theme]);
+
   // User state
   const [users, setUsers] = useState<User[]>(getUsers());
   const [currentUserId, setCurrentUserIdState] = useState<string | null>(getCurrentUserId());

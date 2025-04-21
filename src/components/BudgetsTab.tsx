@@ -94,7 +94,7 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({ tab, transactions }) => {
       {/* Add category UI */}
       <div className="mb-4 flex gap-2">
         <input
-          className="border rounded px-2 py-1 flex-1"
+          className="border rounded px-2 py-1 flex-1 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
           placeholder="New Category Name"
           value={newCatName}
           onChange={e => setNewCatName(e.target.value)}
@@ -115,7 +115,7 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({ tab, transactions }) => {
       <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded shadow">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:gap-4">
           <select
-            className="border rounded px-2 py-1 flex-1"
+            className="border rounded px-2 py-1 flex-1 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
             value={selectedCategory}
             onChange={e => setSelectedCategory(e.target.value)}
           >
@@ -127,7 +127,7 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({ tab, transactions }) => {
             ))}
           </select>
           <input
-            className="border rounded px-2 py-1 w-28"
+            className="border rounded px-2 py-1 w-28 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
             placeholder="Amount ($)"
             value={amount}
             onChange={e => setAmount(e.target.value)}
@@ -137,7 +137,7 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({ tab, transactions }) => {
           <div className="flex flex-col gap-1">
             <label className="text-xs">Recurrence:</label>
             <select
-              className="border rounded px-2 py-1"
+              className="border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
               value={recurrence}
               onChange={e => setRecurrence(e.target.value as any)}
             >
@@ -150,11 +150,11 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({ tab, transactions }) => {
             <div className="flex gap-1 items-end">
               <div>
                 <label className="text-xs">Start:</label>
-                <input type="month" className="border rounded px-2 py-1" value={rangeStart} onChange={e => setRangeStart(e.target.value)} />
+                <input type="month" className="border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" value={rangeStart} onChange={e => setRangeStart(e.target.value)} />
               </div>
               <div>
                 <label className="text-xs">End:</label>
-                <input type="month" className="border rounded px-2 py-1" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} />
+                <input type="month" className="border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} />
               </div>
             </div>
           )}
@@ -233,12 +233,7 @@ const BudgetsTab: React.FC<BudgetsTabProps> = ({ tab, transactions }) => {
           );
         })}
       </ul>
-      {/* Debug section */}
-      <div className="mt-8 p-2 bg-yellow-50 text-xs rounded">
-        <div className="font-bold mb-1">Debug Info:</div>
-        <div><b>Categories (from storage):</b> <pre>{JSON.stringify(categories, null, 2)}</pre></div>
-        <div><b>Budgets (from storage):</b> <pre>{JSON.stringify(budgets, null, 2)}</pre></div>
-      </div>
+
     </div>
   );
 };

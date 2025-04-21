@@ -1,8 +1,8 @@
 .chartContainer {
   max-width: 100%;
   width: 100%;
-  height: 350px;
-  overflow: hidden;
+  height: 520px;
+  overflow: visible;
   /* Prevent unwanted scrolling */
 }
 
