@@ -100,6 +100,22 @@ const App: React.FC = () => {
       return sum;
     }, 0);
   }, [budgets, currentMonth]);
+
+  // Remaining budget after subtracting spending for the current month
+  const remainingBudgetThisMonth = useMemo(() => {
+    const monthStr = new Date().toISOString().slice(0, 7);
+    return budgets.reduce((sum, b) => {
+      const catName = categories.find(c => c.id === b.categoryId)?.name;
+      const spent = allTransactions
+        .filter(tx => {
+          const sameMonth = tx.date.slice(0, 7) === monthStr;
+          const matches = tx.budgetId === b.id || (catName && tx.category === catName);
+          return sameMonth && matches && tx.amount < 0;
+        })
+        .reduce((s, tx) => s + Math.abs(tx.amount), 0);
+      return sum + (b.amount - spent);
+    }, 0);
+  }, [budgets, allTransactions, categories]);
   // Calculate months left in year
   const monthsLeftInYear = 12 - now.getMonth();
 
@@ -367,7 +383,7 @@ const App: React.FC = () => {
             setEditingTx={setEditingTx}
             transactions={allTransactions}
             projectedEndOfMonthBalance={projectedEndOfMonthBalance}
-            totalRemainingBudgets={budgets.reduce((sum, b) => sum + (b.amount - (allTransactions.filter(tx => tx.category === b.categoryId && tx.amount < 0 && tx.date.slice(0,7) === new Date().toISOString().slice(0,7)).reduce((s, tx) => s + Math.abs(tx.amount), 0))), 0)}
+            totalRemainingBudgets={remainingBudgetThisMonth}
             monthsLeftInYear={12 - new Date().getMonth()}
           />
           <main className="flex-1 p-8 pt-20 flex justify-center items-start">
