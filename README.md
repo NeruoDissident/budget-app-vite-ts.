@@ -1,6 +1,6 @@
 # Budget Calendar
 
-A personal budgeting app with a calendar view, recurring transactions, and real-time balance calculations. Built with React, TypeScript, Vite, Tailwind CSS, and date-fns. All data is stored in localStorage.
+A personal budgeting app with a calendar view, recurring transactions, and real-time balance calculations. Built with React, TypeScript, Vite, Tailwind CSS, and date-fns. All data is stored in localStorage. Now installable as a PWA.
 
 ## Features
 - Calendar view for the current year
@@ -80,4 +80,9 @@ A personal budgeting app with a calendar view, recurring transactions, and real-
 
 ---
 
-No backend required. No service worker. No unnecessary dependencies.
+No backend required. Includes a basic service worker for installability and offline caching of core assets.
+
+## PWA
+
+- Add to Home Screen on iOS: open in Safari, tap Share → Add to Home Screen.
+- The service worker caches core assets and serves them offline after the first load.

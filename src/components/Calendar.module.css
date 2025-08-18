@@ -133,3 +133,21 @@
 .calendarDay:hover {
   @apply shadow-lg bg-blue-100 dark:bg-blue-800;
 }
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .calendarDay {
+    @apply h-28 p-1;
+  }
+  .calendarDay .balance {
+    @apply text-base;
+  }
+  .calendarDay .transactions {
+    @apply text-xs;
+  }
+  .calendarDay .weekEndBalance,
+  .calendarDay .monthEndBalance,
+  .calendarDay .afterBudgetBalance {
+    @apply text-[10px];
+  }
+}

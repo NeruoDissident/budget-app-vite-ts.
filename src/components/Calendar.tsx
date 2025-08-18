@@ -134,7 +134,7 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDay, onSelectDay, transacti
           <span className="text-2xl text-blue-600 dark:text-blue-300">&#8594;</span>
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-4 bg-white dark:bg-gray-800 rounded shadow p-6">
+      <div className="grid grid-cols-7 gap-2 sm:gap-4 bg-white dark:bg-gray-800 rounded shadow p-2 sm:p-6">
         {/* Weekday headers */}
         {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => (
           <span key={d} className="text-xs font-semibold text-center text-gray-400 dark:text-gray-200">{d}</span>
