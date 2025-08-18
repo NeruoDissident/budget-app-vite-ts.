@@ -25,7 +25,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ balances, projectedEndOfMonthBalance, totalRemainingBudgets, monthsLeftInYear, selectedDay, dayTxs, onAdd, onEdit, onDelete, editingTx, setEditingTx, transactions }) => {
   return (
-    <aside className="w-64 bg-white dark:bg-gray-900 shadow-lg p-4 flex flex-col gap-4 border-r border-gray-200 dark:border-gray-700">
+    <aside className="w-full md:w-64 bg-white dark:bg-gray-900 shadow-lg p-4 pt-24 md:pt-4 flex flex-col gap-4 border-r border-gray-200 dark:border-gray-700 h-full md:h-auto overflow-y-auto">
       <h1 className="text-2xl font-bold mb-6 text-blue-600 dark:text-blue-400">Budget Calendar</h1>
       <div>
         <h2 className="text-lg font-semibold mb-2">Balances</h2>

@@ -314,7 +314,7 @@ const App: React.FC = () => {
   const handleDeleteRecurring = (id: string) => setRecurrings(rs => rs.filter(r => r.id !== id));
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {/* Theme Selector */}
       <div className="fixed top-4 right-4 z-50">
         <select
@@ -330,7 +330,7 @@ const App: React.FC = () => {
       </div>
       {/* Tabs */}
       <div className="absolute left-0 right-0 top-0 flex flex-col items-center mt-4 z-40">
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 px-4 overflow-x-auto no-scrollbar max-w-full">
           <button
             className={`px-4 py-2 rounded-t ${tab === 'calendar' ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200'}`}
             onClick={() => setTab('calendar')}
@@ -386,7 +386,7 @@ const App: React.FC = () => {
             totalRemainingBudgets={remainingBudgetThisMonth}
             monthsLeftInYear={12 - new Date().getMonth()}
           />
-          <main className="flex-1 p-8 pt-20 flex justify-center items-start">
+          <main className="flex-1 p-4 md:p-8 pt-24 md:pt-20 flex justify-center items-start overflow-y-auto">
             <Calendar
               selectedDay={selectedDay}
               onSelectDay={setSelectedDay}
@@ -403,7 +403,7 @@ const App: React.FC = () => {
         </>
       )}
       {tab === 'recurring' && (
-        <main className="flex-1 p-8 pt-20 flex justify-center items-start">
+        <main className="flex-1 p-4 md:p-8 pt-24 md:pt-20 flex justify-center items-start overflow-y-auto">
           <RecurringTab
             recurrings={recurrings}
             onAddRecurring={handleAddRecurring}
@@ -416,17 +416,17 @@ const App: React.FC = () => {
         </main>
       )}
       {tab === 'budgets' && (
-        <main className="flex-1 p-8 pt-20 flex justify-center items-start">
+        <main className="flex-1 p-4 md:p-8 pt-24 md:pt-20 flex justify-center items-start overflow-y-auto">
           <BudgetsTab transactions={allTransactions} />
         </main>
       )}
       {tab === 'graphs' && (
-        <main className="flex-1 p-8 pt-24 flex justify-center items-start">
+        <main className="flex-1 p-4 md:p-8 pt-28 md:pt-24 flex justify-center items-start overflow-y-auto">
           <SpendingByCategoryChart transactions={allTransactions} />
         </main>
       )}
       {tab === 'goals' && (
-        <main className="flex-1 p-8 pt-20 flex justify-center items-start">
+        <main className="flex-1 p-4 md:p-8 pt-24 md:pt-20 flex justify-center items-start overflow-y-auto">
           <GoalsTab
             goals={goals}
             onAddGoal={handleAddGoal}
@@ -440,7 +440,7 @@ const App: React.FC = () => {
         </main>
       )}
       {tab === 'users' && (
-        <main className="flex-1 p-8 pt-20 flex justify-center items-start">
+        <main className="flex-1 p-4 md:p-8 pt-24 md:pt-20 flex justify-center items-start overflow-y-auto">
           <UserManagementTab
             users={users}
             currentUserId={currentUserId || ''}

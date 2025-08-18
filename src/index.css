@@ -6,3 +6,19 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   @apply bg-gray-100 text-gray-900 transition-colors duration-300 dark:bg-gray-900 dark:text-gray-100;
 }
+
+/* Improve tap targets and text on mobile */
+@media (max-width: 640px) {
+  body {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Utility to hide horizontal scrollbar where we enable overflow-x-auto */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
