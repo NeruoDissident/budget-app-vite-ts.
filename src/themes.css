@@ -1,3 +1,6 @@
+/* Import Google Fonts for themes */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Press+Start+2P&display=swap');
+
 /* Retro 8-bit Theme */
 .retro body, .retro {
   font-family: 'Press Start 2P', monospace !important;
@@ -55,6 +58,3 @@
 .synthwave .shadow, .synthwave .shadow-lg {
   box-shadow: 0 0 16px #ff00cc, 0 0 32px #00fff7 !important;
 }
-
-/* Import Google Fonts for themes */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Press+Start+2P&display=swap');
