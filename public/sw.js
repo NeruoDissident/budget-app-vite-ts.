@@ -1,52 +1,95 @@
-const CACHE_NAME = 'budget-cal-v1';
-const CORE_ASSETS = ['/', '/index.html', '/manifest.webmanifest'];
+const VERSION = 'v2';
+const CACHE_NAME = `budget-cal-${VERSION}`;
+const CORE_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.webmanifest',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+];
+
+function cacheCoreAssets() {
+  return caches
+    .open(CACHE_NAME)
+    .then(cache => cache.addAll(CORE_ASSETS))
+    .then(() => self.skipWaiting());
+}
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then(cache => cache.addAll(CORE_ASSETS))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil(cacheCoreAssets());
 });
 
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches
-      .keys()
-      .then(keys =>
-        Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+function removeOldCaches() {
+  return caches
+    .keys()
+    .then(keys =>
+      Promise.all(
+        keys
+          .filter(key => key.startsWith('budget-cal-') && key !== CACHE_NAME)
+          .map(key => caches.delete(key))
       )
-      .then(() => self.clients.claim())
-  );
+    )
+    .then(() => self.clients.claim());
+}
+
+self.addEventListener('activate', event => {
+  event.waitUntil(removeOldCaches());
 });
+
+function cacheResponse(request, response) {
+  if (!response || response.status !== 200 || response.type === 'opaque') {
+    return;
+  }
+
+  caches
+    .open(CACHE_NAME)
+    .then(cache => cache.put(request, response))
+    .catch(() => {});
+}
 
 self.addEventListener('fetch', event => {
   const { request } = event;
-  if (request.method !== 'GET') return;
+
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  const url = new URL(request.url);
+
+  if (url.origin !== self.location.origin) {
+    return;
+  }
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      caches.match('/').then(cached => cached || fetch(request))
+      fetch(request)
+        .then(response => {
+          cacheResponse(request, response.clone());
+          cacheResponse('/', response.clone());
+          cacheResponse('/index.html', response.clone());
+          return response;
+        })
+        .catch(async () => {
+          const cached = (await caches.match(request)) || (await caches.match('/'));
+          if (cached) {
+            return cached;
+          }
+          return caches.match('/index.html');
+        })
     );
     return;
   }
 
   event.respondWith(
     caches.match(request).then(cached => {
-      return (
-        cached ||
-        fetch(request)
-          .then(response => {
-            const copy = response.clone();
-            caches
-              .open(CACHE_NAME)
-              .then(cache => cache.put(request, copy))
-              .catch(() => {});
-            return response;
-          })
-          .catch(() => cached)
-      );
+      if (cached) {
+        return cached;
+      }
+
+      return fetch(request).then(response => {
+        cacheResponse(request, response.clone());
+        return response;
+      });
     })
   );
 });
