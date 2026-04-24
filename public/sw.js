@@ -1,11 +1,11 @@
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE_NAME = `budget-cal-${VERSION}`;
 const CORE_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
 ];
 
 function cacheCoreAssets() {
@@ -65,16 +65,16 @@ self.addEventListener('fetch', event => {
       fetch(request)
         .then(response => {
           cacheResponse(request, response.clone());
-          cacheResponse('/', response.clone());
-          cacheResponse('/index.html', response.clone());
+          cacheResponse('./', response.clone());
+          cacheResponse('./index.html', response.clone());
           return response;
         })
         .catch(async () => {
-          const cached = (await caches.match(request)) || (await caches.match('/'));
+          const cached = (await caches.match(request)) || (await caches.match('./'));
           if (cached) {
             return cached;
           }
-          return caches.match('/index.html');
+          return caches.match('./index.html');
         })
     );
     return;
@@ -93,4 +93,3 @@ self.addEventListener('fetch', event => {
     })
   );
 });
-
