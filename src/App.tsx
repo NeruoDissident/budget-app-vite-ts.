@@ -78,6 +78,11 @@ const App: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState<SelectedDay>(startOfToday().toISOString().slice(0, 10));
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
 
+  // Expand recurring transactions into dated instances
+  const allTransactions = useMemo(() => {
+    return addRecurringInstances(transactions, recurrings);
+  }, [transactions, recurrings]);
+
   // Calculate total remaining budgets for the current month
   const now = new Date();
   const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM
@@ -118,11 +123,6 @@ const App: React.FC = () => {
   }, [budgets, allTransactions, categories]);
   // Calculate months left in year
   const monthsLeftInYear = 12 - now.getMonth();
-
-  // Expand recurring transactions into dated instances
-  const allTransactions = useMemo(() => {
-    return addRecurringInstances(transactions, recurrings);
-  }, [transactions, recurrings]);
 
   // Balances
   const balances = useMemo(() => computeBalances(allTransactions), [allTransactions]);
